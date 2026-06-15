@@ -17,6 +17,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    // User token exchange
     if (path === '/token' && request.method === 'POST') {
       const body = await request.text();
       const resp = await fetch(TESLA_TOKEN_URL, {
@@ -31,12 +32,12 @@ export default {
       });
     }
 
+    // Partner registration - accepts secret from body for testing
     if (path === '/register' && request.method === 'POST') {
       const body = await request.json();
       const clientId = body.client_id;
-      const clientSecret = env.TESLA_CLIENT_SECRET;
+      const clientSecret = body.client_secret || env.TESLA_CLIENT_SECRET;
 
-      // Build form body manually to handle special characters
       const params = new URLSearchParams();
       params.append('grant_type', 'client_credentials');
       params.append('client_id', clientId);
@@ -69,12 +70,13 @@ export default {
       });
 
       const regData = await regResp.json();
-      return new Response(JSON.stringify({ success: true, status: regResp.status, data: regData }), {
-        status: regResp.status,
+      return new Response(JSON.stringify({ success: true, data: regData }), {
+        status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
+    // Proxy all Tesla API calls
     if (path.startsWith('/api/1/')) {
       const teslaPath = path.replace('/api/1', '');
       const teslaUrl = `${TESLA_API_BASE}${teslaPath}${url.search}`;
