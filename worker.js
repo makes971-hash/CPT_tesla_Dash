@@ -6,14 +6,6 @@ const REGIONS = [
   'https://fleet-api.prd.eu.vn.cloud.tesla.com/api/1',
 ];
 
-async function tryRegions(path, options) {
-  for (const base of REGIONS) {
-    const resp = await fetch(`${base}${path}`, options);
-    if (resp.status !== 421) return resp;
-  }
-  return await fetch(`${REGIONS[1]}${path}`, options);
-}
-
 export default {
   async fetch(request, env, ctx) {
     const corsHeaders = {
@@ -29,88 +21,103 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    if (path === '/token' && request.method === 'POST') {
-      const body = await request.text();
-      const resp = await fetch(TESLA_TOKEN_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body,
-      });
-      const data = await resp.json();
-      return new Response(JSON.stringify(data), {
-        status: resp.status,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
-
-    if (path === '/register' && request.method === 'POST') {
-      const body = await request.json();
-      const clientId = body.client_id;
-      const clientSecret = body.client_secret || env.TESLA_CLIENT_SECRET;
-
-      const params = new URLSearchParams();
-      params.append('grant_type', 'client_credentials');
-      params.append('client_id', clientId);
-      params.append('client_secret', clientSecret);
-      params.append('scope', 'openid offline_access energy_device_data energy_cmds');
-      params.append('audience', 'https://fleet-api.prd.eu.vn.cloud.tesla.com');
-
-      const tokenResp = await fetch(TESLA_TOKEN_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params,
-      });
-
-      const tokenData = await tokenResp.json();
-
-      if (!tokenData.access_token) {
-        return new Response(JSON.stringify({ error: 'Failed to get partner token', detail: tokenData }), {
-          status: 400,
+    try {
+      // Token exchange
+      if (path === '/token' && request.method === 'POST') {
+        const body = await request.text();
+        const resp = await fetch(TESLA_TOKEN_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        });
+        const data = await resp.json();
+        return new Response(JSON.stringify(data), {
+          status: resp.status,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
       }
 
-      // Register in both regions
-      const results = [];
-      for (const base of REGIONS) {
-        const regResp = await fetch(`${base}/partner_accounts`, {
+      // Partner registration
+      if (path === '/register' && request.method === 'POST') {
+        const body = await request.json();
+        const clientId = body.client_id;
+        const clientSecret = body.client_secret || env.TESLA_CLIENT_SECRET;
+        const params = new URLSearchParams();
+        params.append('grant_type', 'client_credentials');
+        params.append('client_id', clientId);
+        params.append('client_secret', clientSecret);
+        params.append('scope', 'openid offline_access energy_device_data energy_cmds');
+        params.append('audience', 'https://fleet-api.prd.eu.vn.cloud.tesla.com');
+        const tokenResp = await fetch(TESLA_TOKEN_URL, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${tokenData.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ domain: 'makes971-hash.github.io' }),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params,
         });
-        const regData = await regResp.json();
-        results.push({ region: base, status: regResp.status, data: regData });
+        const tokenData = await tokenResp.json();
+        if (!tokenData.access_token) {
+          return new Response(JSON.stringify({ error: 'Failed to get partner token', detail: tokenData }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+        const results = [];
+        for (const base of REGIONS) {
+          const regResp = await fetch(`${base}/partner_accounts`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain: 'makes971-hash.github.io' }),
+          });
+          results.push({ region: base, status: regResp.status, data: await regResp.json() });
+        }
+        return new Response(JSON.stringify({ success: true, results }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
       }
 
-      return new Response(JSON.stringify({ success: true, results }), {
-        status: 200,
+      // Proxy Tesla API calls - handle both GET and POST
+      if (path.startsWith('/api/1/')) {
+        const teslaPath = path.replace('/api/1', '');
+        const authHeader = request.headers.get('Authorization') || '';
+
+        // Read body for POST requests
+        let bodyText = null;
+        if (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') {
+          bodyText = await request.text();
+        }
+
+        // Try each region
+        let lastResp = null;
+        for (const base of REGIONS) {
+          const teslaUrl = `${base}${teslaPath}${url.search}`;
+          const fetchOpts = {
+            method: request.method,
+            headers: {
+              'Authorization': authHeader,
+              'Content-Type': 'application/json',
+            },
+          };
+          if (bodyText) fetchOpts.body = bodyText;
+
+          const resp = await fetch(teslaUrl, fetchOpts);
+          lastResp = resp;
+          if (resp.status !== 421) break;
+        }
+
+        const data = await lastResp.text();
+        return new Response(data, {
+          status: lastResp.status,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
+
+      return new Response('Not found', { status: 404, headers: corsHeaders });
+
+    } catch(e) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
-
-    if (path.startsWith('/api/1/')) {
-      const teslaPath = path.replace('/api/1', '');
-      const authHeader = request.headers.get('Authorization') || '';
-      const options = {
-        method: request.method,
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json',
-        },
-        body: request.method !== 'GET' ? request.body : undefined,
-      };
-
-      const resp = await tryRegions(`${teslaPath}${url.search}`, options);
-      const data = await resp.text();
-      return new Response(data, {
-        status: resp.status,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
-
-    return new Response('Not found', { status: 404, headers: corsHeaders });
   },
 };
