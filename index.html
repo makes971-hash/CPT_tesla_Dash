@@ -90,6 +90,23 @@ main{padding:24px;max-width:1280px;margin:0 auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 canvas{width:100%!important;height:160px!important;margin-top:8px}
 
+/* Weather Widget */
+.weather-widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.weather-main{display:flex;align-items:center;gap:16px}
+.weather-icon{font-size:48px;line-height:1}
+.weather-info{}
+.weather-temp{font-size:28px;font-weight:600}
+.weather-desc{font-size:13px;color:var(--muted);margin-top:2px}
+.weather-details{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
+.weather-detail{font-size:12px;color:var(--muted)}
+.weather-detail strong{color:var(--text)}
+.weather-rec{flex:1;min-width:220px;background:var(--bg);border-radius:var(--radius-sm);padding:16px}
+.weather-rec-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.weather-rec-level{font-size:32px;font-weight:700;margin-bottom:4px}
+.weather-rec-reason{font-size:12px;color:var(--muted);margin-bottom:12px}
+.weather-apply-btn{padding:8px 16px;border-radius:var(--radius-sm);background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;width:100%}
+.weather-apply-btn:hover{background:#c41230}
+
 /* Battery Control */
 .control-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;box-shadow:var(--shadow)}
 .control-panel h3{font-size:16px;font-weight:600;margin-bottom:6px}
@@ -196,6 +213,31 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
 
     <!-- Battery Control Tab -->
     <div id="tab-control" style="display:none">
+
+      <!-- Weather Widget -->
+      <div class="weather-widget" id="weather-widget">
+        <div class="weather-main">
+          <div class="weather-icon" id="w-icon">⏳</div>
+          <div class="weather-info">
+            <div class="weather-temp" id="w-temp">—</div>
+            <div class="weather-desc" id="w-desc">Loading Cape Town weather…</div>
+            <div class="weather-details">
+              <div class="weather-detail">☁️ Cloud <strong id="w-cloud">—</strong></div>
+              <div class="weather-detail">🌞 UV <strong id="w-uv">—</strong></div>
+              <div class="weather-detail">💧 Rain <strong id="w-rain">—</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="weather-rec">
+          <div class="weather-rec-title">Recommended reserve</div>
+          <div class="weather-rec-level" id="w-rec-level">—</div>
+          <div class="weather-rec-reason" id="w-rec-reason">Fetching forecast…</div>
+          <button class="weather-apply-btn" id="w-apply-btn" onclick="applyWeatherRecommendation()" disabled>
+            Apply to all sites
+          </button>
+        </div>
+      </div>
+
       <div class="control-panel">
         <h3>🔋 Battery reserve control</h3>
         <p>Set the backup reserve percentage for one or more sites at once.</p>
@@ -530,6 +572,56 @@ async function loadAlerts() {
   list.innerHTML = alerts.map(a=>`<div class="alert a-${a.type}"><span style="font-size:16px">${a.type==='err'?'🔴':'🟡'}</span><div><div class="alert-title">${a.site}</div><div>${a.msg}</div></div></div>`).join('');
 }
 
+async function fetchWeather() {
+  try {
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=-33.9249&longitude=18.4241&current=temperature_2m,weather_code,cloud_cover,uv_index,precipitation&daily=uv_index_max,precipitation_sum,cloud_cover_mean&timezone=Africa%2FJohannesburg&forecast_days=1';
+    const r = await fetch(url);
+    const d = await r.json();
+    const c = d.current;
+    const daily = d.daily;
+    const temp = Math.round(c.temperature_2m);
+    const cloud = c.cloud_cover;
+    const uv = c.uv_index;
+    const rain = c.precipitation;
+    const code = c.weather_code;
+    document.getElementById('w-temp').textContent = `${temp}°C`;
+    document.getElementById('w-cloud').textContent = `${cloud}%`;
+    document.getElementById('w-uv').textContent = uv.toFixed(1);
+    document.getElementById('w-rain').textContent = `${rain} mm`;
+    const icons = {0:'☀️',1:'🌤️',2:'🌤️',3:'☁️'};
+    const descs = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast'};
+    document.getElementById('w-icon').textContent = code <= 3 ? icons[code] : code <= 49 ? '🌫️' : code <= 67 ? '🌧️' : code <= 77 ? '❄️' : code <= 82 ? '🌦️' : '⛈️';
+    document.getElementById('w-desc').textContent = (code <= 3 ? descs[code] : code <= 49 ? 'Foggy' : code <= 67 ? 'Rainy' : code <= 77 ? 'Snowy' : code <= 82 ? 'Rain showers' : 'Thunderstorm') + ' · Cape Town';
+    const dailyUV = daily.uv_index_max[0];
+    const dailyCloud = daily.cloud_cover_mean[0];
+    const dailyRain = daily.precipitation_sum[0];
+    let rec, reason, color;
+    if (dailyRain > 5) { rec=100; reason='🌧️ Rainy day — solar unlikely. Keep battery full.'; color='#ef4444'; }
+    else if (dailyCloud > 70) { rec=80; reason='☁️ Overcast — limited solar. High reserve recommended.'; color='#f59e0b'; }
+    else if (dailyCloud > 40 || dailyUV < 4) { rec=60; reason='🌤️ Partly cloudy — moderate solar expected.'; color='#f59e0b'; }
+    else if (dailyUV >= 4 && dailyUV < 7) { rec=40; reason='🌤️ Good solar day — battery will charge well.'; color='#10b981'; }
+    else if (dailyUV >= 7 && dailyUV < 10) { rec=20; reason='☀️ Excellent solar — panels will fully charge battery.'; color='#10b981'; }
+    else { rec=10; reason='🔆 Exceptional solar day — minimal reserve needed.'; color='#10b981'; }
+    weatherRecommendation = rec;
+    const el = document.getElementById('w-rec-level');
+    el.textContent = `${rec}%`;
+    el.style.color = color;
+    document.getElementById('w-rec-reason').textContent = reason;
+    document.getElementById('w-apply-btn').disabled = false;
+  } catch(e) {
+    document.getElementById('w-desc').textContent = 'Weather unavailable';
+  }
+}
+
+let weatherRecommendation = null;
+
+async function applyWeatherRecommendation() {
+  if (weatherRecommendation === null) return;
+  setReserve(weatherRecommendation);
+  selectAllSites(true);
+  document.getElementById('ctrl-result').innerHTML = `<div class="ctrl-result-item ctrl-ok">✅ Reserve set to ${weatherRecommendation}% — click Apply to selected sites to confirm.</div>`;
+}
+
 function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['fleet','control','alerts'][i]===tab));
@@ -537,7 +629,7 @@ function switchTab(tab) {
   document.getElementById('tab-control').style.display = tab==='control'?'':'none';
   document.getElementById('tab-alerts').style.display = tab==='alerts'?'':'none';
   if (tab==='alerts') loadAlerts();
-  if (tab==='control') renderSiteSelectList();
+  if (tab==='control') { renderSiteSelectList(); fetchWeather(); }
 }
 
 function refreshData() { liveData={}; if(activeTab==='fleet') loadFleet(); else if(activeTab==='alerts') loadAlerts(); else loadFleet(); }
@@ -560,3 +652,4 @@ function logout() {
 </script>
 </body>
 </html>
+<!-- WEATHER PATCH - add before </body> -->
