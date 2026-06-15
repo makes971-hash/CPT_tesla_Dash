@@ -81,7 +81,6 @@
   .alert-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: var(--radius-sm); font-size: 13px; border: 1px solid; }
   .alert-error { background: #fff1f2; border-color: #fecdd3; color: #881337; }
   .alert-warning { background: #fefce8; border-color: #fef08a; color: #854d0e; }
-  .alert-info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
   .alert-title { font-weight: 500; margin-bottom: 2px; }
   .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px; color: var(--muted); gap: 12px; }
   .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -177,9 +176,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
+const PROXY = 'https://cptdash.makes971.workers.dev';
 const TESLA_AUTH_URL = 'https://auth.tesla.com/oauth2/v3/authorize';
-const TESLA_TOKEN_URL = 'https://auth.tesla.com/oauth2/v3/token';
-const TESLA_API_BASE = 'https://fleet-api.prd.na.vn.cloud.tesla.com/api/1';
 const REDIRECT_URI = 'https://makes971-hash.github.io/CPT_tesla_Dash/';
 
 let accessToken = null, sites = [], histChart = null, activeTab = 'fleet';
@@ -214,9 +212,9 @@ async function handleCallback(code, state) {
   const clientId = sessionStorage.getItem('client_id');
   if (state !== savedState) { showPage('auth-page'); return; }
   try {
-    const res = await fetch(TESLA_TOKEN_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    const res = await fetch(`${PROXY}/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ grant_type:'authorization_code', client_id:clientId, code, redirect_uri:REDIRECT_URI, code_verifier:verifier })
     });
     if (!res.ok) throw new Error('Token exchange failed');
@@ -235,7 +233,9 @@ async function handleCallback(code, state) {
 }
 
 async function apiGet(path) {
-  const res = await fetch(`${TESLA_API_BASE}${path}`, { headers:{ Authorization:`Bearer ${accessToken}` } });
+  const res = await fetch(`${PROXY}/api/1${path}`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 }
@@ -249,6 +249,7 @@ async function showDashboard() {
 }
 
 async function loadFleet() {
+  document.getElementById('fleet-grid').innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading sites…</span></div>';
   try {
     const data = await apiGet('/energy_sites');
     sites = data.response || [];
@@ -263,7 +264,6 @@ function renderFleet(sites) {
   const summaryGrid = document.getElementById('summary-grid');
   if (!sites.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:14px;padding:24px;">No energy sites found on this account.</p>'; return; }
   document.getElementById('sites-count').textContent = `${sites.length} site${sites.length !== 1 ? 's' : ''}`;
-
   let totalSolar=0, totalBattery=0, totalHome=0, onlineCount=0;
   const cards = sites.map((site, i) => {
     const name = site.site_name || `Site ${i+1}`;
@@ -294,7 +294,6 @@ function renderFleet(sites) {
     </div>`;
   });
   grid.innerHTML = cards.join('');
-
   const avgBattery = sites.length ? (totalBattery / sites.length).toFixed(0) : 0;
   summaryGrid.innerHTML = `
     <div class="stat-card"><div class="icon" style="background:var(--solar-light);">☀️</div><div class="stat-label">Total solar</div><div class="stat-value solar-val">${totalSolar.toFixed(1)} kW</div><div class="stat-sub">All sites</div></div>
@@ -366,7 +365,7 @@ async function loadAlerts() {
     } catch(_) {}
   }
   if (!alerts.length) { list.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:14px;">✅ No active alerts across your fleet.</div>'; return; }
-  list.innerHTML = alerts.map(a => `<div class="alert-item alert-${a.type}"><span style="font-size:16px;">${a.type==='error'?'🔴':a.type==='warning'?'🟡':'ℹ️'}</span><div><div class="alert-title">${a.site}</div><div>${a.msg}</div></div></div>`).join('');
+  list.innerHTML = alerts.map(a => `<div class="alert-item alert-${a.type}"><span style="font-size:16px;">${a.type==='error'?'🔴':'🟡'}</span><div><div class="alert-title">${a.site}</div><div>${a.msg}</div></div></div>`).join('');
 }
 
 function switchTab(tab) {
