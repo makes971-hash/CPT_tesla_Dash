@@ -83,12 +83,41 @@ main{padding:24px;max-width:1280px;margin:0 auto}
 .alert{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:var(--radius-sm);font-size:13px;border:1px solid}
 .a-err{background:#fff1f2;border-color:#fecdd3;color:#881337}
 .a-warn{background:#fefce8;border-color:#fef08a;color:#854d0e}
+.a-ok{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
 .alert-title{font-weight:500;margin-bottom:2px}
 .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--muted);gap:12px}
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 canvas{width:100%!important;height:160px!important;margin-top:8px}
-@media(max-width:600px){main{padding:12px}.fleet-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}}
+
+/* Battery Control */
+.control-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;box-shadow:var(--shadow)}
+.control-panel h3{font-size:16px;font-weight:600;margin-bottom:6px}
+.control-panel p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.reserve-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.reserve-btn{padding:10px 20px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.reserve-btn:hover{border-color:var(--battery);color:var(--battery)}
+.reserve-btn.active-reserve{background:var(--battery);color:#fff;border-color:var(--battery)}
+.custom-reserve{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.custom-reserve input{width:80px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;text-align:center}
+.site-select-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-bottom:20px;max-height:320px;overflow-y:auto;padding:4px}
+.site-select-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;background:var(--surface)}
+.site-select-item:hover{border-color:var(--battery)}
+.site-select-item.checked{border-color:var(--battery);background:var(--battery-light)}
+.site-select-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--battery);cursor:pointer}
+.site-select-name{font-size:13px;font-weight:500;flex:1}
+.site-select-batt{font-size:12px;color:var(--muted)}
+.ctrl-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.apply-btn{padding:10px 24px;border-radius:var(--radius-sm);background:var(--battery);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.apply-btn:hover{background:#059669}
+.apply-btn:disabled{opacity:.5;cursor:not-allowed}
+.select-all-btn{padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;cursor:pointer}
+.ctrl-result{margin-top:16px;display:flex;flex-direction:column;gap:6px}
+.ctrl-result-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--radius-sm);font-size:13px}
+.ctrl-ok{background:#f0fdf4;color:#15803d}
+.ctrl-err{background:#fff1f2;color:#881337}
+
+@media(max-width:600px){main{padding:12px}.fleet-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}.reserve-btns{gap:6px}.reserve-btn{padding:8px 14px;font-size:13px}}
 </style>
 </head>
 <body>
@@ -124,7 +153,7 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
       </div>
       <div class="field">
         <label>Scope</label>
-        <input id="scope" value="openid offline_access energy_device_data"/>
+        <input id="scope" value="openid offline_access energy_device_data energy_cmds"/>
       </div>
       <div id="auth-err" class="err"></div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="startAuth()">
@@ -141,8 +170,11 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
   <div id="dashboard-page" class="page">
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="switchTab('fleet')">Fleet overview</button>
+      <button class="nav-tab" onclick="switchTab('control')">🔋 Battery control</button>
       <button class="nav-tab" onclick="switchTab('alerts')">Alerts</button>
     </div>
+
+    <!-- Fleet Tab -->
     <div id="tab-fleet">
       <div class="summary-grid" id="summary-grid"></div>
       <div class="sec-hdr">
@@ -161,6 +193,46 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
         </div>
       </div>
     </div>
+
+    <!-- Battery Control Tab -->
+    <div id="tab-control" style="display:none">
+      <div class="control-panel">
+        <h3>🔋 Battery reserve control</h3>
+        <p>Set the backup reserve percentage for one or more sites at once.</p>
+
+        <div style="font-size:13px;font-weight:500;margin-bottom:10px;color:var(--muted)">Reserve level</div>
+        <div class="reserve-btns">
+          <button class="reserve-btn" onclick="setReserve(100)">100%</button>
+          <button class="reserve-btn" onclick="setReserve(80)">80%</button>
+          <button class="reserve-btn" onclick="setReserve(60)">60%</button>
+          <button class="reserve-btn" onclick="setReserve(40)">40%</button>
+          <button class="reserve-btn" onclick="setReserve(20)">20%</button>
+          <button class="reserve-btn" onclick="setReserve(0)">0%</button>
+        </div>
+
+        <div class="custom-reserve">
+          <span style="font-size:13px;color:var(--muted)">Custom:</span>
+          <input type="number" id="custom-reserve" min="0" max="100" placeholder="%" oninput="setReserve(parseInt(this.value))"/>
+          <span style="font-size:13px;color:var(--muted)">%</span>
+        </div>
+
+        <div style="font-size:13px;font-weight:500;margin-bottom:10px;color:var(--muted)">Select sites</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="select-all-btn" onclick="selectAllSites(true)">Select all</button>
+          <button class="select-all-btn" onclick="selectAllSites(false)">Deselect all</button>
+        </div>
+        <div class="site-select-list" id="site-select-list"></div>
+
+        <div class="ctrl-actions">
+          <button class="apply-btn" id="apply-btn" onclick="applyReserve()" disabled>Apply to selected sites</button>
+          <span id="selected-count" style="font-size:13px;color:var(--muted)">0 sites selected</span>
+        </div>
+
+        <div class="ctrl-result" id="ctrl-result"></div>
+      </div>
+    </div>
+
+    <!-- Alerts Tab -->
     <div id="tab-alerts" style="display:none">
       <div class="alert-list" id="alert-list"></div>
     </div>
@@ -174,6 +246,7 @@ const TESLA_AUTH = 'https://auth.tesla.com/oauth2/v3/authorize';
 const REDIRECT = 'https://makes971-hash.github.io/CPT_tesla_Dash/';
 
 let token = null, sites = [], liveData = {}, chart = null, activeTab = 'fleet';
+let selectedReserve = null, selectedSites = new Set();
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -229,8 +302,10 @@ async function handleCallback(code, state) {
   }
 }
 
-async function api(path) {
-  const r = await fetch(`${PROXY}/api/1${path}`, {headers:{Authorization:`Bearer ${token}`}});
+async function api(path, method='GET', body=null) {
+  const opts = {method, headers:{Authorization:`Bearer ${token}`, 'Content-Type':'application/json'}};
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(`${PROXY}/api/1${path}`, opts);
   if (!r.ok) throw new Error(`API error ${r.status}`);
   return r.json();
 }
@@ -247,7 +322,6 @@ async function loadFleet() {
   document.getElementById('fleet-grid').innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading sites…</span></div>';
   document.getElementById('summary-grid').innerHTML = '';
   liveData = {};
-
   try {
     const d = await api('/products');
     sites = (d.response || []).filter(p => p.resource_type === 'battery' || p.energy_site_id);
@@ -257,6 +331,7 @@ async function loadFleet() {
     }
     document.getElementById('sites-count').textContent = `${sites.length} site${sites.length!==1?'s':''}`;
     renderSiteCards();
+    renderSiteSelectList();
     await fetchAllLiveData();
   } catch(e) {
     document.getElementById('fleet-grid').innerHTML = `<div class="err" style="display:block">Failed to load sites: ${e.message}</div>`;
@@ -269,29 +344,20 @@ function renderSiteCards() {
     const name = s.site_name || `Site ${i+1}`;
     const live = liveData[s.energy_site_id];
     const isOnline = !!s.gateway_id;
-
     if (!live) {
       return `<div class="site-card" id="sc${i}">
-        <div class="site-hdr">
-          <div class="site-name">${name}</div>
-          <span class="badge ${isOnline?'online':'offline'}">${isOnline?'Online':'Offline'}</span>
-        </div>
+        <div class="site-hdr"><div class="site-name">${name}</div><span class="badge ${isOnline?'online':'offline'}">${isOnline?'Online':'Offline'}</span></div>
         <div class="loading-card"><div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0 auto 4px"></div>Loading…</div>
       </div>`;
     }
-
     const solar = (live.solar_power/1000).toFixed(1);
     const home = (live.load_power/1000).toFixed(1);
     const gridP = (live.grid_power/1000).toFixed(1);
     const bpct = live.percentage_charged;
     const battColor = bpct < 20 ? 'var(--battery-low)' : 'var(--battery)';
     const gridLabel = live.grid_power >= 0 ? `+${gridP} kW` : `${gridP} kW`;
-
     return `<div class="site-card" onclick="selectSite(${i})" id="sc${i}">
-      <div class="site-hdr">
-        <div class="site-name">${name}</div>
-        <span class="badge ${isOnline?'online':'offline'}">${isOnline?'Online':'Offline'}</span>
-      </div>
+      <div class="site-hdr"><div class="site-name">${name}</div><span class="badge ${isOnline?'online':'offline'}">${isOnline?'Online':'Offline'}</span></div>
       <div class="metrics">
         <div class="m"><div class="lbl">☀️ Solar</div><div class="val sv">${solar} kW</div></div>
         <div class="m"><div class="lbl">🏠 Home</div><div class="val hv">${home} kW</div></div>
@@ -304,6 +370,78 @@ function renderSiteCards() {
   }).join('');
 }
 
+function renderSiteSelectList() {
+  const list = document.getElementById('site-select-list');
+  list.innerHTML = sites.map((s,i) => {
+    const name = s.site_name || `Site ${i+1}`;
+    const live = liveData[s.energy_site_id];
+    const bpct = live ? live.percentage_charged.toFixed(0) + '%' : '—';
+    const checked = selectedSites.has(s.energy_site_id);
+    return `<label class="site-select-item ${checked?'checked':''}" id="ssl${i}">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleSite(${i}, this.checked)"/>
+      <span class="site-select-name">${name}</span>
+      <span class="site-select-batt">🔋 ${bpct}</span>
+    </label>`;
+  }).join('');
+  updateSelectedCount();
+}
+
+function toggleSite(idx, checked) {
+  const id = sites[idx].energy_site_id;
+  if (checked) selectedSites.add(id); else selectedSites.delete(id);
+  const el = document.getElementById(`ssl${idx}`);
+  if (el) el.classList.toggle('checked', checked);
+  updateSelectedCount();
+}
+
+function selectAllSites(select) {
+  sites.forEach((s,i) => {
+    if (select) selectedSites.add(s.energy_site_id); else selectedSites.delete(s.energy_site_id);
+  });
+  renderSiteSelectList();
+}
+
+function updateSelectedCount() {
+  const count = selectedSites.size;
+  document.getElementById('selected-count').textContent = `${count} site${count!==1?'s':''} selected`;
+  document.getElementById('apply-btn').disabled = count === 0 || selectedReserve === null;
+}
+
+function setReserve(val) {
+  if (isNaN(val) || val < 0 || val > 100) return;
+  selectedReserve = val;
+  document.querySelectorAll('.reserve-btn').forEach(b => {
+    b.classList.toggle('active-reserve', parseInt(b.textContent) === val);
+  });
+  document.getElementById('custom-reserve').value = val;
+  updateSelectedCount();
+}
+
+async function applyReserve() {
+  if (selectedReserve === null || selectedSites.size === 0) return;
+  const btn = document.getElementById('apply-btn');
+  btn.disabled = true;
+  btn.textContent = 'Applying…';
+  const results = document.getElementById('ctrl-result');
+  results.innerHTML = '';
+
+  const toApply = sites.filter(s => selectedSites.has(s.energy_site_id));
+
+  for (const s of toApply) {
+    const name = s.site_name || s.energy_site_id;
+    try {
+      await api(`/energy_sites/${s.energy_site_id}/backup`, 'POST', { backup_reserve_percent: selectedReserve });
+      results.innerHTML += `<div class="ctrl-result-item ctrl-ok">✅ ${name} — set to ${selectedReserve}%</div>`;
+    } catch(e) {
+      results.innerHTML += `<div class="ctrl-result-item ctrl-err">❌ ${name} — ${e.message}</div>`;
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Apply to selected sites';
+  setTimeout(() => loadFleet(), 2000);
+}
+
 async function fetchAllLiveData() {
   const promises = sites.map(async (s) => {
     try {
@@ -311,10 +449,12 @@ async function fetchAllLiveData() {
       if (d.response) liveData[s.energy_site_id] = d.response;
     } catch(_) {}
     renderSiteCards();
+    renderSiteSelectList();
     updateSummary();
   });
   await Promise.all(promises);
   renderSiteCards();
+  renderSiteSelectList();
   updateSummary();
 }
 
@@ -323,12 +463,7 @@ function updateSummary() {
   let ts=0, tb=0, th=0, count=0;
   sites.forEach(s => {
     const live = liveData[s.energy_site_id];
-    if (live) {
-      ts += (live.solar_power||0)/1000;
-      tb += live.percentage_charged||0;
-      th += (live.load_power||0)/1000;
-      count++;
-    }
+    if (live) { ts+=(live.solar_power||0)/1000; tb+=live.percentage_charged||0; th+=(live.load_power||0)/1000; count++; }
   });
   const avg = count ? (tb/count).toFixed(0) : '—';
   const onlineCount = sites.filter(s => s.gateway_id).length;
@@ -397,13 +532,15 @@ async function loadAlerts() {
 
 function switchTab(tab) {
   activeTab = tab;
-  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['fleet','alerts'][i]===tab));
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['fleet','control','alerts'][i]===tab));
   document.getElementById('tab-fleet').style.display = tab==='fleet'?'':'none';
+  document.getElementById('tab-control').style.display = tab==='control'?'':'none';
   document.getElementById('tab-alerts').style.display = tab==='alerts'?'':'none';
   if (tab==='alerts') loadAlerts();
+  if (tab==='control') renderSiteSelectList();
 }
 
-function refreshData() { liveData={}; if(activeTab==='fleet') loadFleet(); else loadAlerts(); }
+function refreshData() { liveData={}; if(activeTab==='fleet') loadFleet(); else if(activeTab==='alerts') loadAlerts(); else loadFleet(); }
 
 function logout() {
   sessionStorage.clear(); token=null; sites=[]; liveData={};
