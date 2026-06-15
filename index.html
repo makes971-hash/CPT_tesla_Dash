@@ -54,16 +54,16 @@ main{padding:24px;max-width:1280px;margin:0 auto}
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .sec-hdr h2{font-size:18px;font-weight:600}
 .sec-hdr span{font-size:13px;color:var(--muted)}
-.fleet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:32px}
+.fleet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:32px}
 .site-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
 .site-card:hover{border-color:var(--accent);transform:translateY(-1px)}
 .site-card.selected{border:2px solid var(--accent)}
 .site-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
-.site-name{font-size:15px;font-weight:600}
-.site-addr{font-size:12px;color:var(--muted);margin-top:2px}
+.site-name{font-size:14px;font-weight:600}
 .badge{font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px}
 .online{background:#dcfce7;color:#15803d}
 .offline{background:#fee2e2;color:#dc2626}
+.loading-card{background:var(--bg);border-radius:var(--radius-sm);padding:12px;text-align:center;color:var(--muted);font-size:12px}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .m{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px}
 .m .lbl{font-size:11px;color:var(--muted);margin-bottom:2px}
@@ -88,7 +88,7 @@ main{padding:24px;max-width:1280px;margin:0 auto}
 .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--muted);gap:12px}
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-canvas{width:100%;height:160px;margin-top:8px}
+canvas{width:100%!important;height:160px!important;margin-top:8px}
 @media(max-width:600px){main{padding:12px}.fleet-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -110,7 +110,6 @@ canvas{width:100%;height:160px;margin-top:8px}
 </header>
 
 <main>
-  <!-- AUTH -->
   <div id="auth-page" class="page active">
     <div class="auth-card">
       <h2>Connect your fleet</h2>
@@ -136,18 +135,15 @@ canvas{width:100%;height:160px;margin-top:8px}
     </div>
   </div>
 
-  <!-- CALLBACK -->
   <div id="callback-page" class="page">
     <div class="loading"><div class="spinner"></div><span>Completing sign in…</span></div>
   </div>
 
-  <!-- DASHBOARD -->
   <div id="dashboard-page" class="page">
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="switchTab('fleet')">Fleet overview</button>
       <button class="nav-tab" onclick="switchTab('alerts')">Alerts</button>
     </div>
-
     <div id="tab-fleet">
       <div class="summary-grid" id="summary-grid"></div>
       <div class="sec-hdr">
@@ -166,7 +162,6 @@ canvas{width:100%;height:160px;margin-top:8px}
         </div>
       </div>
     </div>
-
     <div id="tab-alerts" style="display:none">
       <div class="alert-list" id="alert-list"></div>
     </div>
@@ -179,7 +174,7 @@ const PROXY = 'https://cptdash.makes971.workers.dev';
 const TESLA_AUTH = 'https://auth.tesla.com/oauth2/v3/authorize';
 const REDIRECT = 'https://makes971-hash.github.io/CPT_tesla_Dash/';
 
-let token = null, sites = [], chart = null, activeTab = 'fleet';
+let token = null, sites = [], liveData = {}, chart = null, activeTab = 'fleet';
 
 async function pkce() {
   const arr = new Uint8Array(32);
@@ -246,75 +241,115 @@ async function showDashboard() {
 
 async function loadFleet() {
   document.getElementById('fleet-grid').innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading sites…</span></div>';
+  document.getElementById('summary-grid').innerHTML = '';
+
   try {
     const d = await api('/products');
-    sites = (d.response || []).filter(p => p.resource_type === 'energy_site' || p.energy_site_id);
+    sites = (d.response || []).filter(p => p.resource_type === 'battery' || p.energy_site_id);
     if (!sites.length) {
-      // fallback to energy_sites endpoint
-      const d2 = await api('/energy_sites');
-      sites = d2.response || [];
+      document.getElementById('fleet-grid').innerHTML = '<p style="color:var(--muted);font-size:14px;padding:24px">No energy sites found.</p>';
+      return;
     }
-    renderFleet();
+    document.getElementById('sites-count').textContent = `${sites.length} site${sites.length!==1?'s':''}`;
+    renderSiteCards();
+    fetchAllLiveData();
   } catch(e) {
     document.getElementById('fleet-grid').innerHTML = `<div class="err" style="display:block">Failed to load sites: ${e.message}</div>`;
   }
 }
 
-function renderFleet() {
+function renderSiteCards() {
   const grid = document.getElementById('fleet-grid');
-  const sg = document.getElementById('summary-grid');
-  if (!sites.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:14px;padding:24px">No energy sites found.</p>'; return; }
-  document.getElementById('sites-count').textContent = `${sites.length} site${sites.length!==1?'s':''}`;
+  grid.innerHTML = sites.map((s,i) => {
+    const name = s.site_name || `Site ${i+1}`;
+    const live = liveData[s.energy_site_id];
+    const solar = live ? (live.solar_power/1000).toFixed(1) : '—';
+    const home = live ? (live.load_power/1000).toFixed(1) : '—';
+    const grid2 = live ? ((live.grid_power||0)/1000).toFixed(1) : '—';
+    const bpct = live ? (live.percentage_charged||0) : null;
+    const battColor = bpct !== null && bpct < 20 ? 'var(--battery-low)' : 'var(--battery)';
+    const gridLabel = live ? (live.grid_power >= 0 ? `+${grid2} kW` : `${grid2} kW`) : '—';
+    const isOnline = !!s.gateway_id;
 
-  let ts=0, tb=0, th=0, on=0;
-  const cards = sites.map((s,i) => {
-    const name = s.site_name || s.display_name || `Site ${i+1}`;
-    const addr = s.address?.address_line1 || '';
-    const solar = (s.solar_power||0)/1000;
-    const bpct = s.percentage_charged||0;
-    const grid = (s.grid_power||0)/1000;
-    const home = (s.load_power||0)/1000;
-    const isOn = !!s.gateway_id || s.sync_grid_alert_enabled !== undefined;
-    ts+=solar; tb+=bpct; th+=home; if(isOn) on++;
-    const bc = bpct<20?'var(--battery-low)':'var(--battery)';
-    const gl = grid>=0?`+${grid.toFixed(1)} kW import`:`${Math.abs(grid).toFixed(1)} kW export`;
     return `<div class="site-card" onclick="selectSite(${i})" id="sc${i}">
       <div class="site-hdr">
-        <div><div class="site-name">${name}</div>${addr?`<div class="site-addr">${addr}</div>`:''}</div>
-        <span class="badge ${isOn?'online':'offline'}">${isOn?'Online':'Offline'}</span>
+        <div class="site-name">${name}</div>
+        <span class="badge ${isOnline?'online':'offline'}">${isOnline?'Online':'Offline'}</span>
       </div>
+      ${!live ? `<div class="loading-card"><div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0 auto 4px"></div>Loading live data…</div>` : `
       <div class="metrics">
-        <div class="m"><div class="lbl">☀️ Solar</div><div class="val sv">${solar.toFixed(1)} kW</div></div>
-        <div class="m"><div class="lbl">🏠 Home</div><div class="val hv">${home.toFixed(1)} kW</div></div>
-        <div class="m"><div class="lbl">⚡ Grid</div><div class="val gv" style="font-size:13px">${gl}</div></div>
+        <div class="m"><div class="lbl">☀️ Solar</div><div class="val sv">${solar} kW</div></div>
+        <div class="m"><div class="lbl">🏠 Home</div><div class="val hv">${home} kW</div></div>
+        <div class="m"><div class="lbl">⚡ Grid</div><div class="val gv" style="font-size:13px">${gridLabel}</div></div>
         <div class="m"><div class="lbl">🔋 Battery</div><div class="val bv">${bpct.toFixed(0)}%</div></div>
       </div>
       <div class="bar-lbl"><span>Battery</span><span>${bpct.toFixed(0)}%</span></div>
-      <div class="bar"><div class="bar-fill" style="width:${bpct}%;background:${bc}"></div></div>
+      <div class="bar"><div class="bar-fill" style="width:${bpct}%;background:${battColor}"></div></div>`}
     </div>`;
-  });
-  grid.innerHTML = cards.join('');
+  }).join('');
+}
 
-  const avg = sites.length ? (tb/sites.length).toFixed(0) : 0;
+async function fetchAllLiveData() {
+  // Fetch live data for all sites in parallel
+  const promises = sites.map(async (s) => {
+    try {
+      const d = await api(`/energy_sites/${s.energy_site_id}/live_status`);
+      if (d.response) {
+        liveData[s.energy_site_id] = d.response;
+      }
+    } catch(_) {}
+  });
+
+  // Update cards as data comes in
+  for (let i = 0; i < promises.length; i++) {
+    promises[i].then(() => {
+      renderSiteCards();
+      updateSummary();
+    });
+  }
+
+  await Promise.all(promises);
+  renderSiteCards();
+  updateSummary();
+}
+
+function updateSummary() {
+  const sg = document.getElementById('summary-grid');
+  let ts=0, tb=0, th=0, count=0;
+  sites.forEach(s => {
+    const live = liveData[s.energy_site_id];
+    if (live) {
+      ts += (live.solar_power||0)/1000;
+      tb += live.percentage_charged||0;
+      th += (live.load_power||0)/1000;
+      count++;
+    }
+  });
+  const avg = count ? (tb/count).toFixed(0) : '—';
+  const onlineCount = sites.filter(s => s.gateway_id).length;
+
   sg.innerHTML = `
     <div class="stat-card"><div class="icon" style="background:var(--solar-light)">☀️</div><div class="stat-label">Total solar</div><div class="stat-value sv">${ts.toFixed(1)} kW</div><div class="stat-sub">All sites</div></div>
     <div class="stat-card"><div class="icon" style="background:var(--battery-light)">🔋</div><div class="stat-label">Avg battery</div><div class="stat-value bv">${avg}%</div><div class="stat-sub">Fleet avg</div></div>
     <div class="stat-card"><div class="icon" style="background:var(--home-light)">🏠</div><div class="stat-label">Consumption</div><div class="stat-value hv">${th.toFixed(1)} kW</div><div class="stat-sub">All sites</div></div>
-    <div class="stat-card"><div class="icon" style="background:var(--accent-light)">📡</div><div class="stat-label">Online</div><div class="stat-value" style="color:var(--accent)">${on}/${sites.length}</div><div class="stat-sub">Fleet status</div></div>`;
+    <div class="stat-card"><div class="icon" style="background:var(--accent-light)">📡</div><div class="stat-label">Online</div><div class="stat-value" style="color:var(--accent)">${onlineCount}/${sites.length}</div><div class="stat-sub">Fleet status</div></div>`;
 }
 
 async function selectSite(idx) {
   document.querySelectorAll('.site-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById(`sc${idx}`).classList.add('selected');
   const s = sites[idx];
+  const live = liveData[s.energy_site_id] || {};
   const panel = document.getElementById('site-detail');
   panel.style.display = 'block';
-  document.getElementById('detail-title').textContent = `⚡ ${s.site_name||s.display_name||'Site '+(idx+1)}`;
-  const solar=((s.solar_power||0)/1000).toFixed(1);
-  const batt=((s.battery_power||0)/1000).toFixed(1);
-  const grid=((s.grid_power||0)/1000).toFixed(1);
-  const home=((s.load_power||0)/1000).toFixed(1);
-  const bpct=(s.percentage_charged||0).toFixed(0);
+  document.getElementById('detail-title').textContent = `⚡ ${s.site_name||'Site '+(idx+1)}`;
+
+  const solar=((live.solar_power||0)/1000).toFixed(1);
+  const batt=((live.battery_power||0)/1000).toFixed(1);
+  const gridP=((live.grid_power||0)/1000).toFixed(1);
+  const home=((live.load_power||0)/1000).toFixed(1);
+  const bpct=(live.percentage_charged||0).toFixed(0);
+
   document.getElementById('energy-flow').innerHTML=`
     <div class="fn"><div class="fi" style="background:var(--solar-light)">☀️</div><div class="fl">Solar</div><div class="fv sv">${solar} kW</div></div>
     <div class="fa">→</div>
@@ -322,7 +357,8 @@ async function selectSite(idx) {
     <div class="fa">→</div>
     <div class="fn"><div class="fi" style="background:var(--home-light)">🏠</div><div class="fl">Home</div><div class="fv hv">${home} kW</div></div>
     <div class="fa" style="color:var(--grid)">⇄</div>
-    <div class="fn"><div class="fi" style="background:var(--grid-light)">🔌</div><div class="fl">Grid</div><div class="fv gv">${parseFloat(grid)>=0?'+':''}${grid} kW</div></div>`;
+    <div class="fn"><div class="fi" style="background:var(--grid-light)">🔌</div><div class="fl">Grid</div><div class="fv gv">${parseFloat(gridP)>=0?'+':''}${gridP} kW</div></div>`;
+
   try {
     const h = await api(`/energy_sites/${s.energy_site_id}/calendar_history?kind=power&period=day`);
     renderChart(h.response?.time_series||[]);
@@ -347,13 +383,12 @@ async function loadAlerts() {
   list.innerHTML = '<div class="loading"><div class="spinner"></div><span>Checking sites…</span></div>';
   const alerts = [];
   for (const s of sites) {
-    try {
-      const d = await api(`/energy_sites/${s.energy_site_id}/live_status`);
-      const live = d.response;
-      if (live?.percentage_charged < 10) alerts.push({type:'err',site:s.site_name||'Site',msg:`Battery critically low at ${live.percentage_charged.toFixed(0)}%`});
-      else if (live?.percentage_charged < 20) alerts.push({type:'warn',site:s.site_name||'Site',msg:`Battery low at ${live.percentage_charged.toFixed(0)}%`});
-      if (live?.grid_status==='Inactive') alerts.push({type:'warn',site:s.site_name||'Site',msg:'Grid inactive — running on battery/solar'});
-    } catch(_){}
+    const live = liveData[s.energy_site_id];
+    if (live) {
+      if (live.percentage_charged < 10) alerts.push({type:'err',site:s.site_name,msg:`Battery critically low at ${live.percentage_charged.toFixed(0)}%`});
+      else if (live.percentage_charged < 20) alerts.push({type:'warn',site:s.site_name,msg:`Battery low at ${live.percentage_charged.toFixed(0)}%`});
+      if (live.grid_status==='Inactive') alerts.push({type:'warn',site:s.site_name,msg:'Grid inactive — running on battery/solar'});
+    }
   }
   if (!alerts.length) { list.innerHTML='<div style="padding:32px;text-align:center;color:var(--muted);font-size:14px">✅ No active alerts.</div>'; return; }
   list.innerHTML = alerts.map(a=>`<div class="alert a-${a.type}"><span style="font-size:16px">${a.type==='err'?'🔴':'🟡'}</span><div><div class="alert-title">${a.site}</div><div>${a.msg}</div></div></div>`).join('');
@@ -367,10 +402,10 @@ function switchTab(tab) {
   if (tab==='alerts') loadAlerts();
 }
 
-function refreshData() { if(activeTab==='fleet') loadFleet(); else loadAlerts(); }
+function refreshData() { liveData={}; if(activeTab==='fleet') loadFleet(); else loadAlerts(); }
 
 function logout() {
-  sessionStorage.clear(); token=null; sites=[];
+  sessionStorage.clear(); token=null; sites=[]; liveData={};
   ['logout-btn','refresh-btn'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('live-ind').style.display='none';
   showPage('auth-page');
