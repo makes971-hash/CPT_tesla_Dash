@@ -17,7 +17,6 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // Token exchange (user login)
     if (path === '/token' && request.method === 'POST') {
       const body = await request.text();
       const resp = await fetch(TESLA_TOKEN_URL, {
@@ -32,22 +31,23 @@ export default {
       });
     }
 
-    // Partner registration
     if (path === '/register' && request.method === 'POST') {
       const body = await request.json();
       const clientId = body.client_id;
       const clientSecret = env.TESLA_CLIENT_SECRET;
 
+      // Build form body manually to handle special characters
+      const params = new URLSearchParams();
+      params.append('grant_type', 'client_credentials');
+      params.append('client_id', clientId);
+      params.append('client_secret', clientSecret);
+      params.append('scope', 'openid offline_access energy_device_data energy_cmds');
+      params.append('audience', 'https://fleet-api.prd.na.vn.cloud.tesla.com');
+
       const tokenResp = await fetch(TESLA_TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: clientId,
-          client_secret: clientSecret,
-          scope: 'openid offline_access energy_device_data energy_cmds',
-          audience: 'https://fleet-api.prd.na.vn.cloud.tesla.com',
-        }).toString(),
+        body: params,
       });
 
       const tokenData = await tokenResp.json();
@@ -75,7 +75,6 @@ export default {
       });
     }
 
-    // Proxy Tesla API calls
     if (path.startsWith('/api/1/')) {
       const teslaPath = path.replace('/api/1', '');
       const teslaUrl = `${TESLA_API_BASE}${teslaPath}${url.search}`;
