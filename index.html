@@ -27,15 +27,40 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .btn-primary:hover{background:#c41230}
 .dot{width:8px;height:8px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 main{padding:24px;max-width:1280px;margin:0 auto}
 .page{display:none!important}
 .page.active{display:block!important}
-#auth-page.active{display:flex!important;align-items:center;justify-content:center;min-height:calc(100vh - 60px)}
+#auth-page.active{display:flex!important;align-items:stretch;justify-content:center;min-height:calc(100vh - 60px);padding:0}
+.login-wrap{display:flex;width:100%;min-height:calc(100vh - 60px)}
+.login-art{flex:1;position:relative;overflow:hidden;display:flex;align-items:flex-end;min-height:500px}
+.login-art svg{position:absolute;top:0;left:0;width:100%;height:100%}
+.art-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(15,23,42,.1) 0%,rgba(15,23,42,.6) 70%,rgba(15,23,42,.85) 100%)}
+.art-text{position:relative;z-index:2;padding:40px;color:#fff}
+.art-text h1{font-size:28px;font-weight:600;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,.3)}
+.art-text p{font-size:14px;opacity:.85;line-height:1.6;max-width:380px}
+.art-stats{display:flex;gap:24px;margin-top:20px}
+.art-stat{text-align:center}
+.art-stat .as-val{font-size:24px;font-weight:600;color:#10b981}
+.art-stat .as-lbl{font-size:11px;opacity:.7;margin-top:2px}
+.login-form-side{width:420px;display:flex;align-items:center;justify-content:center;padding:40px;background:var(--surface)}
+.login-card{width:100%;max-width:340px}
+.login-card h2{font-size:22px;font-weight:600;margin-bottom:6px;text-align:center}
+.login-card .login-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:32px}
+.pin-wrap{display:flex;justify-content:center;gap:12px;margin-bottom:24px}
+.pin-input{width:52px;height:60px;border:1.5px solid var(--border);border-radius:var(--radius);text-align:center;font-size:24px;font-weight:600;color:var(--text);background:var(--bg);outline:none;transition:border-color .15s;-webkit-text-security:disc}
+.pin-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+.pin-input.filled{border-color:var(--battery);background:var(--battery-light)}
+.pin-error{color:#dc2626;font-size:13px;text-align:center;margin-bottom:16px;display:none}
+.login-btn{width:100%;padding:12px;border-radius:var(--radius-sm);background:var(--accent);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:16px}
+.login-btn:hover{background:#c41230}
+.login-btn:disabled{opacity:.4;cursor:not-allowed}
+.setup-link{display:block;text-align:center;font-size:12px;color:var(--muted);cursor:pointer}
+.setup-link:hover{color:var(--accent)}
+.setup-section{display:none}
+.setup-section.active{display:block}
 #callback-page.active{display:flex!important;align-items:center;justify-content:center;min-height:calc(100vh - 60px)}
-.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:40px;width:100%;max-width:440px;box-shadow:var(--shadow)}
-.auth-card h2{font-size:22px;font-weight:600;margin-bottom:8px}
-.auth-card>p{color:var(--muted);font-size:14px;margin-bottom:28px}
-.note{background:var(--accent-light);border:1px solid #fecdd3;border-radius:var(--radius-sm);padding:12px;font-size:13px;color:#9f1239;margin-bottom:20px}
+@media(max-width:800px){.login-art{display:none}.login-form-side{width:100%}}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--muted)}
 .field input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s}
@@ -220,27 +245,158 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
 
 <main>
   <div id="auth-page" class="page active">
-    <div class="auth-card">
-      <h2>Connect your fleet</h2>
-      <p>Monitor all your Tesla Powerwall sites in one place.</p>
-      <div class="note">🔒 Credentials are never stored — only used to get a secure access token.</div>
-      <div class="field">
-        <label>Client ID</label>
-        <input id="client-id" type="text" placeholder="your-client-id" autocomplete="off"/>
+    <div class="login-wrap">
+      <!-- Art side -->
+      <div class="login-art">
+        <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <!-- Sky gradient -->
+          <defs>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#1e3a5f"/>
+              <stop offset="40%" stop-color="#2d6a9f"/>
+              <stop offset="70%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#f97316"/>
+            </linearGradient>
+            <linearGradient id="mtn" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#1a1a2e"/>
+              <stop offset="100%" stop-color="#16213e"/>
+            </linearGradient>
+          </defs>
+          <rect width="800" height="600" fill="url(#sky)"/>
+          <!-- Sun -->
+          <circle cx="600" cy="280" r="50" fill="#fbbf24" opacity=".9"/>
+          <circle cx="600" cy="280" r="70" fill="#fbbf24" opacity=".2"/>
+          <!-- Table Mountain silhouette -->
+          <path d="M0 380 L80 340 L140 280 L180 260 L250 255 L350 255 L420 260 L480 255 L540 255 L580 270 L620 310 L680 350 L720 360 L800 380 L800 600 L0 600 Z" fill="url(#mtn)"/>
+          <!-- Signal Hill -->
+          <path d="M0 380 L40 360 L100 320 L140 280" fill="none" stroke="#16213e" stroke-width="0"/>
+          <path d="M0 420 L60 400 L100 380 L140 370 L180 380 L200 400 L200 600 L0 600 Z" fill="#0f172a" opacity=".6"/>
+          <!-- City lights -->
+          <rect x="120" y="390" width="3" height="12" fill="#fbbf24" opacity=".6" rx="1"/>
+          <rect x="145" y="385" width="3" height="18" fill="#fbbf24" opacity=".5" rx="1"/>
+          <rect x="160" y="388" width="3" height="14" fill="#fbbf24" opacity=".4" rx="1"/>
+          <rect x="200" y="382" width="3" height="20" fill="#fbbf24" opacity=".5" rx="1"/>
+          <rect x="230" y="386" width="3" height="16" fill="#fbbf24" opacity=".6" rx="1"/>
+          <rect x="280" y="383" width="3" height="19" fill="#fbbf24" opacity=".4" rx="1"/>
+          <rect x="320" y="387" width="3" height="15" fill="#fbbf24" opacity=".5" rx="1"/>
+          <rect x="360" y="384" width="3" height="18" fill="#fbbf24" opacity=".6" rx="1"/>
+          <rect x="420" y="386" width="3" height="16" fill="#fbbf24" opacity=".4" rx="1"/>
+          <rect x="480" y="382" width="3" height="20" fill="#fbbf24" opacity=".5" rx="1"/>
+          <rect x="530" y="388" width="3" height="14" fill="#fbbf24" opacity=".6" rx="1"/>
+          <rect x="580" y="385" width="3" height="17" fill="#fbbf24" opacity=".4" rx="1"/>
+          <!-- Power lines -->
+          <line x1="100" y1="340" x2="100" y2="410" stroke="#475569" stroke-width="1.5"/>
+          <line x1="300" y1="330" x2="300" y2="400" stroke="#475569" stroke-width="1.5"/>
+          <line x1="500" y1="335" x2="500" y2="405" stroke="#475569" stroke-width="1.5"/>
+          <line x1="700" y1="345" x2="700" y2="415" stroke="#475569" stroke-width="1.5"/>
+          <path d="M100 350 Q200 340 300 340 Q400 338 500 345 Q600 348 700 355" fill="none" stroke="#475569" stroke-width="1"/>
+          <path d="M100 358 Q200 350 300 348 Q400 346 500 353 Q600 356 700 362" fill="none" stroke="#475569" stroke-width="1"/>
+          <!-- Power line sparks -->
+          <circle cx="200" cy="344" r="2" fill="#60a5fa" opacity=".8"><animate attributeName="opacity" values=".8;.2;.8" dur="1.5s" repeatCount="indefinite"/></circle>
+          <circle cx="400" cy="341" r="2" fill="#60a5fa" opacity=".6"><animate attributeName="opacity" values=".6;.1;.6" dur="2s" repeatCount="indefinite"/></circle>
+          <circle cx="600" cy="350" r="2" fill="#60a5fa" opacity=".7"><animate attributeName="opacity" values=".7;.2;.7" dur="1.8s" repeatCount="indefinite"/></circle>
+          <!-- Solar panels on mountain -->
+          <g transform="translate(350,248) rotate(-3)">
+            <rect x="0" y="0" width="20" height="12" fill="#1e40af" stroke="#3b82f6" stroke-width=".5" rx="1"/>
+            <line x1="10" y1="0" x2="10" y2="12" stroke="#3b82f6" stroke-width=".3"/>
+            <line x1="0" y1="6" x2="20" y2="6" stroke="#3b82f6" stroke-width=".3"/>
+          </g>
+          <g transform="translate(375,247) rotate(-2)">
+            <rect x="0" y="0" width="20" height="12" fill="#1e40af" stroke="#3b82f6" stroke-width=".5" rx="1"/>
+            <line x1="10" y1="0" x2="10" y2="12" stroke="#3b82f6" stroke-width=".3"/>
+            <line x1="0" y1="6" x2="20" y2="6" stroke="#3b82f6" stroke-width=".3"/>
+          </g>
+          <g transform="translate(400,247) rotate(-1)">
+            <rect x="0" y="0" width="20" height="12" fill="#1e40af" stroke="#3b82f6" stroke-width=".5" rx="1"/>
+            <line x1="10" y1="0" x2="10" y2="12" stroke="#3b82f6" stroke-width=".3"/>
+            <line x1="0" y1="6" x2="20" y2="6" stroke="#3b82f6" stroke-width=".3"/>
+          </g>
+          <!-- Battery icon -->
+          <g transform="translate(620,380)">
+            <rect x="0" y="0" width="40" height="22" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="1"/>
+            <rect x="40" y="6" width="4" height="10" rx="1" fill="#10b981" opacity=".5"/>
+            <rect x="3" y="3" width="24" height="16" rx="2" fill="#10b981" opacity=".7"/>
+          </g>
+          <!-- Stars -->
+          <circle cx="120" cy="80" r="1" fill="#fff" opacity=".6"/>
+          <circle cx="250" cy="50" r="1.2" fill="#fff" opacity=".5"/>
+          <circle cx="380" cy="100" r="1" fill="#fff" opacity=".7"/>
+          <circle cx="500" cy="60" r="1.5" fill="#fff" opacity=".4"/>
+          <circle cx="650" cy="90" r="1" fill="#fff" opacity=".6"/>
+          <circle cx="720" cy="40" r="1.3" fill="#fff" opacity=".5"/>
+          <circle cx="180" cy="130" r="1" fill="#fff" opacity=".4"/>
+          <circle cx="450" cy="30" r="1" fill="#fff" opacity=".6"/>
+          <!-- Water reflection -->
+          <rect x="0" y="430" width="800" height="170" fill="#0f172a" opacity=".4"/>
+          <line x1="100" y1="460" x2="200" y2="458" stroke="#fbbf24" stroke-width=".5" opacity=".3"/>
+          <line x1="400" y1="465" x2="550" y2="462" stroke="#fbbf24" stroke-width=".5" opacity=".2"/>
+          <line x1="250" y1="480" x2="380" y2="478" stroke="#fbbf24" stroke-width=".5" opacity=".15"/>
+        </svg>
+        <div class="art-overlay"></div>
+        <div class="art-text">
+          <h1>CPT Tesla Dash</h1>
+          <p>Monitor and control your entire Powerwall fleet across Cape Town. Real-time solar, battery, and grid analytics.</p>
+          <div class="art-stats">
+            <div class="art-stat"><div class="as-val">22</div><div class="as-lbl">Sites</div></div>
+            <div class="art-stat"><div class="as-val">24/7</div><div class="as-lbl">Monitoring</div></div>
+            <div class="art-stat"><div class="as-val">R3.50</div><div class="as-lbl">/kWh saved</div></div>
+          </div>
+        </div>
       </div>
-      <div class="field">
-        <label>Redirect URI</label>
-        <input id="redirect-uri" value="https://makes971-hash.github.io/CPT_tesla_Dash/" readonly style="background:#f8f9fa;color:var(--muted)"/>
+
+      <!-- Login form side -->
+      <div class="login-form-side">
+        <div class="login-card">
+          <!-- PIN Login (default if setup done) -->
+          <div class="setup-section" id="pin-login-section">
+            <div style="text-align:center;margin-bottom:24px">
+              <div style="width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">
+                <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <h2>Welcome back</h2>
+              <div class="login-sub">Enter your 4-digit PIN to continue</div>
+            </div>
+            <div class="pin-wrap" id="pin-wrap">
+              <input class="pin-input" type="tel" maxlength="1" id="pin1" oninput="pinNext(1)" onfocus="this.select()"/>
+              <input class="pin-input" type="tel" maxlength="1" id="pin2" oninput="pinNext(2)" onfocus="this.select()"/>
+              <input class="pin-input" type="tel" maxlength="1" id="pin3" oninput="pinNext(3)" onfocus="this.select()"/>
+              <input class="pin-input" type="tel" maxlength="1" id="pin4" oninput="pinNext(4)" onfocus="this.select()"/>
+            </div>
+            <div class="pin-error" id="pin-error">Incorrect PIN. Please try again.</div>
+            <button class="login-btn" id="pin-login-btn" onclick="verifyPin()" disabled>Unlock dashboard</button>
+            <span class="setup-link" onclick="showSetup()">Setup or change credentials</span>
+          </div>
+
+          <!-- First-time Setup -->
+          <div class="setup-section" id="setup-section">
+            <div style="text-align:center;margin-bottom:24px">
+              <div style="width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">
+                <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <h2>Setup your dashboard</h2>
+              <div class="login-sub">Connect your Tesla Fleet API and set a PIN</div>
+            </div>
+            <div class="field">
+              <label>Tesla Client ID</label>
+              <input id="client-id" type="text" placeholder="your-client-id" autocomplete="off"/>
+            </div>
+            <div class="field">
+              <label>Create a 4-digit PIN</label>
+              <div class="pin-wrap">
+                <input class="pin-input" type="tel" maxlength="1" id="setup-pin1" oninput="setupPinNext(1)" onfocus="this.select()"/>
+                <input class="pin-input" type="tel" maxlength="1" id="setup-pin2" oninput="setupPinNext(2)" onfocus="this.select()"/>
+                <input class="pin-input" type="tel" maxlength="1" id="setup-pin3" oninput="setupPinNext(3)" onfocus="this.select()"/>
+                <input class="pin-input" type="tel" maxlength="1" id="setup-pin4" oninput="setupPinNext(4)" onfocus="this.select()"/>
+              </div>
+            </div>
+            <input type="hidden" id="redirect-uri" value="https://makes971-hash.github.io/CPT_tesla_Dash/"/>
+            <input type="hidden" id="scope" value="openid offline_access energy_device_data energy_cmds"/>
+            <div id="auth-err" class="err"></div>
+            <button class="login-btn" id="setup-btn" onclick="saveSetupAndAuth()" disabled>Connect with Tesla</button>
+            <span class="setup-link" id="back-to-pin" onclick="showPinLogin()" style="display:none">Back to PIN login</span>
+          </div>
+        </div>
       </div>
-      <div class="field">
-        <label>Scope</label>
-        <input id="scope" value="openid offline_access energy_device_data energy_cmds"/>
-      </div>
-      <div id="auth-err" class="err"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="startAuth()">
-        Connect with Tesla →
-      </button>
-      <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:16px">You'll be redirected to Tesla to authorize access.</p>
     </div>
   </div>
 
@@ -471,8 +627,115 @@ async function pkce() {
   return {v, c};
 }
 
-async function startAuth() {
+// PIN Login
+function initLoginPage() {
+  const savedCid = localStorage.getItem('cpt_client_id');
+  const savedPin = localStorage.getItem('cpt_pin_hash');
+  if (savedCid && savedPin) {
+    showPinLogin();
+  } else {
+    showSetup();
+  }
+}
+
+function showPinLogin() {
+  document.getElementById('pin-login-section').classList.add('active');
+  document.getElementById('setup-section').classList.remove('active');
+  document.getElementById('back-to-pin').style.display = '';
+  clearPins('pin');
+  document.getElementById('pin1').focus();
+}
+
+function showSetup() {
+  document.getElementById('pin-login-section').classList.remove('active');
+  document.getElementById('setup-section').classList.add('active');
+  const savedCid = localStorage.getItem('cpt_client_id');
+  if (savedCid) {
+    document.getElementById('client-id').value = savedCid;
+    document.getElementById('back-to-pin').style.display = '';
+  }
+}
+
+function clearPins(prefix) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById(prefix + i);
+    if (el) { el.value = ''; el.classList.remove('filled'); }
+  }
+}
+
+function pinNext(n) {
+  const el = document.getElementById('pin' + n);
+  if (el.value.length === 1) {
+    el.classList.add('filled');
+    if (n < 4) document.getElementById('pin' + (n+1)).focus();
+  } else {
+    el.classList.remove('filled');
+  }
+  // Check if all filled
+  let pin = '';
+  for (let i = 1; i <= 4; i++) pin += document.getElementById('pin' + i).value;
+  document.getElementById('pin-login-btn').disabled = pin.length !== 4;
+  // Auto-submit on last digit
+  if (pin.length === 4) setTimeout(() => verifyPin(), 150);
+}
+
+function setupPinNext(n) {
+  const el = document.getElementById('setup-pin' + n);
+  if (el.value.length === 1) {
+    el.classList.add('filled');
+    if (n < 4) document.getElementById('setup-pin' + (n+1)).focus();
+  } else {
+    el.classList.remove('filled');
+  }
+  let pin = '';
+  for (let i = 1; i <= 4; i++) pin += document.getElementById('setup-pin' + i).value;
   const cid = document.getElementById('client-id').value.trim();
+  document.getElementById('setup-btn').disabled = pin.length !== 4 || !cid;
+}
+
+function hashPin(pin) {
+  let hash = 0;
+  const str = 'cpt' + pin + 'dash';
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + c;
+    hash |= 0;
+  }
+  return hash.toString(36);
+}
+
+function verifyPin() {
+  let pin = '';
+  for (let i = 1; i <= 4; i++) pin += document.getElementById('pin' + i).value;
+  const savedHash = localStorage.getItem('cpt_pin_hash');
+  if (hashPin(pin) === savedHash) {
+    document.getElementById('pin-error').style.display = 'none';
+    const cid = localStorage.getItem('cpt_client_id');
+    sessionStorage.setItem('cid', cid);
+    startAuth();
+  } else {
+    document.getElementById('pin-error').style.display = 'block';
+    clearPins('pin');
+    document.getElementById('pin1').focus();
+    // Shake animation
+    document.getElementById('pin-wrap').style.animation = 'shake .4s';
+    setTimeout(() => document.getElementById('pin-wrap').style.animation = '', 400);
+  }
+}
+
+function saveSetupAndAuth() {
+  const cid = document.getElementById('client-id').value.trim();
+  let pin = '';
+  for (let i = 1; i <= 4; i++) pin += document.getElementById('setup-pin' + i).value;
+  if (!cid || pin.length !== 4) return;
+  localStorage.setItem('cpt_client_id', cid);
+  localStorage.setItem('cpt_pin_hash', hashPin(pin));
+  sessionStorage.setItem('cid', cid);
+  startAuth();
+}
+
+async function startAuth() {
+  const cid = sessionStorage.getItem('cid') || document.getElementById('client-id').value.trim();
   const scope = document.getElementById('scope').value.trim();
   const err = document.getElementById('auth-err');
   if (!cid) { err.textContent = 'Please enter your Client ID.'; err.style.display = 'block'; return; }
@@ -1149,7 +1412,7 @@ async function sendChat() {
   const saved=sessionStorage.getItem('tok');
   if(code&&state){showPage('callback-page');await handleCallback(code,state);}
   else if(saved){token=saved;showDashboard();}
-  else{showPage('auth-page');}
+  else{showPage('auth-page');initLoginPage();}
 })();
 </script>
 </body>
