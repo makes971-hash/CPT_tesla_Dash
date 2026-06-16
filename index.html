@@ -31,36 +31,56 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 main{padding:24px;max-width:1280px;margin:0 auto}
 .page{display:none!important}
 .page.active{display:block!important}
-#auth-page.active{display:flex!important;align-items:stretch;justify-content:center;min-height:calc(100vh - 60px);padding:0}
-.login-wrap{display:flex;width:100%;min-height:calc(100vh - 60px)}
-.login-art{flex:1;position:relative;overflow:hidden;display:flex;align-items:flex-end;min-height:500px}
-.login-art svg{position:absolute;top:0;left:0;width:100%;height:100%}
-.art-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(15,23,42,.1) 0%,rgba(15,23,42,.6) 70%,rgba(15,23,42,.85) 100%)}
-.art-text{position:relative;z-index:2;padding:40px;color:#fff}
-.art-text h1{font-size:28px;font-weight:600;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,.3)}
-.art-text p{font-size:14px;opacity:.85;line-height:1.6;max-width:380px}
-.art-stats{display:flex;gap:24px;margin-top:20px}
-.art-stat{text-align:center}
-.art-stat .as-val{font-size:24px;font-weight:600;color:#10b981}
-.art-stat .as-lbl{font-size:11px;opacity:.7;margin-top:2px}
-.login-form-side{width:420px;display:flex;align-items:center;justify-content:center;padding:40px;background:var(--surface)}
-.login-card{width:100%;max-width:340px}
-.login-card h2{font-size:22px;font-weight:600;margin-bottom:6px;text-align:center}
-.login-card .login-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:32px}
-.pin-wrap{display:flex;justify-content:center;gap:12px;margin-bottom:24px}
-.pin-input{width:52px;height:60px;border:1.5px solid var(--border);border-radius:var(--radius);text-align:center;font-size:24px;font-weight:600;color:var(--text);background:var(--bg);outline:none;transition:border-color .15s;-webkit-text-security:disc}
-.pin-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
-.pin-input.filled{border-color:var(--battery);background:var(--battery-light)}
-.pin-error{color:#dc2626;font-size:13px;text-align:center;margin-bottom:16px;display:none}
-.login-btn{width:100%;padding:12px;border-radius:var(--radius-sm);background:var(--accent);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:16px}
-.login-btn:hover{background:#c41230}
-.login-btn:disabled{opacity:.4;cursor:not-allowed}
-.setup-link{display:block;text-align:center;font-size:12px;color:var(--muted);cursor:pointer}
-.setup-link:hover{color:var(--accent)}
+#auth-page.active{display:block!important}
+#auth-page{background:radial-gradient(circle at 15% 20%,rgba(90,169,255,.15),transparent 30%),radial-gradient(circle at 80% 15%,rgba(77,225,193,.12),transparent 28%),linear-gradient(180deg,#07111f,#0c2033);min-height:100vh;overflow:hidden;position:relative}
+.lp-page{min-height:100vh;display:grid;grid-template-columns:1.1fr .9fr;position:relative}
+.lp-visual{position:relative;overflow:hidden;padding:48px;display:flex;flex-direction:column;justify-content:space-between}
+.lp-brand{z-index:3}
+.lp-tag{display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.05);backdrop-filter:blur(8px);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#a8bdd3}
+.lp-brand h1{margin-top:22px;font-size:clamp(2.6rem,5vw,4.5rem);line-height:.95;font-weight:800;color:#eef6ff;max-width:680px}
+.lp-brand>p{margin-top:18px;max-width:540px;color:#a8bdd3;font-size:1.05rem;line-height:1.6}
+.lp-brand .designer{margin-top:10px;font-size:12px;color:rgba(255,255,255,.35);letter-spacing:.05em}
+.lp-stats{z-index:3;display:flex;gap:16px;flex-wrap:wrap}
+.lp-stat{min-width:150px;padding:18px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(12px)}
+.lp-stat .lp-s-lbl{display:block;font-size:11px;color:#a8bdd3;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
+.lp-stat .lp-s-val{font-size:1.5rem;font-weight:700;color:#eef6ff}
+.mtn-wrap{position:absolute;inset:0;pointer-events:none}
+.lp-grid{position:absolute;inset:auto 0 0 0;height:38%;background:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to top,black 35%,transparent 100%);opacity:.22;transform:perspective(700px) rotateX(72deg);transform-origin:bottom}
+.lp-glow{position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(77,225,193,.22),transparent 65%);bottom:-180px;left:10%;filter:blur(10px)}
+.lp-mountain{position:absolute;bottom:0;left:0;width:100%;height:58%}
+.lp-mountain svg{width:100%;height:100%;display:block}
+.lp-lines{position:absolute;inset:0;pointer-events:none;opacity:.9}
+.lp-lines svg{width:100%;height:100%;display:block}
+.lp-line{stroke:rgba(255,215,140,.65);stroke-width:2;fill:none;filter:drop-shadow(0 0 8px rgba(255,196,87,.45))}
+.lp-tower{stroke:rgba(200,225,255,.28);stroke-width:1.7;fill:none}
+.lp-panel{display:flex;align-items:center;justify-content:center;padding:32px;position:relative}
+.lp-card{width:100%;max-width:440px;padding:34px;border-radius:28px;background:rgba(7,20,34,.72);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(18px);box-shadow:0 20px 60px rgba(0,0,0,.45);position:relative;overflow:hidden}
+.lp-card::before{content:"";position:absolute;inset:-1px;background:linear-gradient(135deg,rgba(77,225,193,.15),transparent 35%,rgba(90,169,255,.15));z-index:0;pointer-events:none}
+.lp-card>*{position:relative;z-index:1}
+.lp-eyebrow{color:#4de1c1;text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:700;margin-bottom:12px}
+.lp-card h2{font-size:1.8rem;line-height:1.05;margin-bottom:10px;color:#eef6ff}
+.lp-card .lp-sub{color:#a8bdd3;line-height:1.6;margin-bottom:28px;font-size:14px}
+.lp-field{margin-bottom:16px}
+.lp-field label{display:block;margin-bottom:8px;font-size:.95rem;color:#d8e7f7;font-weight:600}
+.lp-field input{width:100%;padding:15px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.08);color:#eef6ff;outline:none;transition:.2s ease;font-size:.98rem}
+.lp-field input::placeholder{color:#88a1b8}
+.lp-field input:focus{border-color:rgba(77,225,193,.6);box-shadow:0 0 0 4px rgba(77,225,193,.12);background:rgba(255,255,255,.1)}
+.lp-pin-wrap{display:flex;justify-content:center;gap:14px;margin-bottom:24px}
+.lp-pin{width:58px;height:68px;border-radius:16px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#eef6ff;text-align:center;font-size:26px;font-weight:700;outline:none;transition:.2s ease;-webkit-text-security:disc}
+.lp-pin:focus{border-color:rgba(77,225,193,.6);box-shadow:0 0 0 4px rgba(77,225,193,.12);background:rgba(255,255,255,.1)}
+.lp-pin.filled{border-color:#4de1c1;background:rgba(77,225,193,.1)}
+.lp-pin-error{color:#ff6b6b;font-size:13px;text-align:center;margin-bottom:16px;display:none}
+.lp-btn{width:100%;border:none;border-radius:16px;padding:16px 18px;font-size:1rem;font-weight:700;color:#04121f;background:linear-gradient(135deg,#4de1c1,#8ef5de);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;box-shadow:0 10px 30px rgba(77,225,193,.28);margin-bottom:16px}
+.lp-btn:hover{transform:translateY(-1px);box-shadow:0 16px 36px rgba(77,225,193,.34)}
+.lp-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.lp-link{display:block;text-align:center;font-size:12px;color:#a8bdd3;cursor:pointer;transition:color .15s}
+.lp-link:hover{color:#4de1c1}
+.lp-footer{margin-top:22px;color:#a8bdd3;font-size:12px;text-align:center;opacity:.6}
 .setup-section{display:none}
 .setup-section.active{display:block}
 #callback-page.active{display:flex!important;align-items:center;justify-content:center;min-height:calc(100vh - 60px)}
-@media(max-width:800px){.login-art{display:none}.login-form-side{width:100%}}
+@media(max-width:980px){.lp-page{grid-template-columns:1fr}.lp-visual{min-height:46vh;padding:28px 24px 20px}.lp-panel{padding:20px 16px 28px;margin-top:-40px;z-index:4}}
+@media(max-width:560px){.lp-card{padding:24px 20px;border-radius:22px}.lp-stats{gap:12px}.lp-stat{min-width:calc(50% - 6px);flex:1}}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--muted)}
 .field input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s}
@@ -250,159 +270,101 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
 
 <main>
   <div id="auth-page" class="page active">
-    <div class="login-wrap">
-      <!-- Art side -->
-      <div class="login-art">
-        <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-          <!-- Sky gradient -->
-          <defs>
-            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#1e3a5f"/>
-              <stop offset="40%" stop-color="#2d6a9f"/>
-              <stop offset="70%" stop-color="#f59e0b"/>
-              <stop offset="100%" stop-color="#f97316"/>
-            </linearGradient>
-            <linearGradient id="mtn" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#1a1a2e"/>
-              <stop offset="100%" stop-color="#16213e"/>
-            </linearGradient>
-          </defs>
-          <rect width="800" height="600" fill="url(#sky)"/>
-          <!-- Sun -->
-          <circle cx="600" cy="280" r="50" fill="#fbbf24" opacity=".9"/>
-          <circle cx="600" cy="280" r="70" fill="#fbbf24" opacity=".2"/>
-          <!-- Table Mountain silhouette -->
-          <path d="M0 380 L80 340 L140 280 L180 260 L250 255 L350 255 L420 260 L480 255 L540 255 L580 270 L620 310 L680 350 L720 360 L800 380 L800 600 L0 600 Z" fill="url(#mtn)"/>
-          <!-- Signal Hill -->
-          <path d="M0 380 L40 360 L100 320 L140 280" fill="none" stroke="#16213e" stroke-width="0"/>
-          <path d="M0 420 L60 400 L100 380 L140 370 L180 380 L200 400 L200 600 L0 600 Z" fill="#0f172a" opacity=".6"/>
-          <!-- City lights -->
-          <rect x="120" y="390" width="3" height="12" fill="#fbbf24" opacity=".6" rx="1"/>
-          <rect x="145" y="385" width="3" height="18" fill="#fbbf24" opacity=".5" rx="1"/>
-          <rect x="160" y="388" width="3" height="14" fill="#fbbf24" opacity=".4" rx="1"/>
-          <rect x="200" y="382" width="3" height="20" fill="#fbbf24" opacity=".5" rx="1"/>
-          <rect x="230" y="386" width="3" height="16" fill="#fbbf24" opacity=".6" rx="1"/>
-          <rect x="280" y="383" width="3" height="19" fill="#fbbf24" opacity=".4" rx="1"/>
-          <rect x="320" y="387" width="3" height="15" fill="#fbbf24" opacity=".5" rx="1"/>
-          <rect x="360" y="384" width="3" height="18" fill="#fbbf24" opacity=".6" rx="1"/>
-          <rect x="420" y="386" width="3" height="16" fill="#fbbf24" opacity=".4" rx="1"/>
-          <rect x="480" y="382" width="3" height="20" fill="#fbbf24" opacity=".5" rx="1"/>
-          <rect x="530" y="388" width="3" height="14" fill="#fbbf24" opacity=".6" rx="1"/>
-          <rect x="580" y="385" width="3" height="17" fill="#fbbf24" opacity=".4" rx="1"/>
-          <!-- Power lines -->
-          <line x1="100" y1="340" x2="100" y2="410" stroke="#475569" stroke-width="1.5"/>
-          <line x1="300" y1="330" x2="300" y2="400" stroke="#475569" stroke-width="1.5"/>
-          <line x1="500" y1="335" x2="500" y2="405" stroke="#475569" stroke-width="1.5"/>
-          <line x1="700" y1="345" x2="700" y2="415" stroke="#475569" stroke-width="1.5"/>
-          <path d="M100 350 Q200 340 300 340 Q400 338 500 345 Q600 348 700 355" fill="none" stroke="#475569" stroke-width="1"/>
-          <path d="M100 358 Q200 350 300 348 Q400 346 500 353 Q600 356 700 362" fill="none" stroke="#475569" stroke-width="1"/>
-          <!-- Power line sparks -->
-          <circle cx="200" cy="344" r="2" fill="#60a5fa" opacity=".8"><animate attributeName="opacity" values=".8;.2;.8" dur="1.5s" repeatCount="indefinite"/></circle>
-          <circle cx="400" cy="341" r="2" fill="#60a5fa" opacity=".6"><animate attributeName="opacity" values=".6;.1;.6" dur="2s" repeatCount="indefinite"/></circle>
-          <circle cx="600" cy="350" r="2" fill="#60a5fa" opacity=".7"><animate attributeName="opacity" values=".7;.2;.7" dur="1.8s" repeatCount="indefinite"/></circle>
-          <!-- Solar panels on mountain -->
-          <g transform="translate(350,248) rotate(-3)">
-            <rect x="0" y="0" width="20" height="12" fill="#1e40af" stroke="#3b82f6" stroke-width=".5" rx="1"/>
-            <line x1="10" y1="0" x2="10" y2="12" stroke="#3b82f6" stroke-width=".3"/>
-            <line x1="0" y1="6" x2="20" y2="6" stroke="#3b82f6" stroke-width=".3"/>
-          </g>
-          <g transform="translate(375,247) rotate(-2)">
-            <rect x="0" y="0" width="20" height="12" fill="#1e40af" stroke="#3b82f6" stroke-width=".5" rx="1"/>
-            <line x1="10" y1="0" x2="10" y2="12" stroke="#3b82f6" stroke-width=".3"/>
-            <line x1="0" y1="6" x2="20" y2="6" stroke="#3b82f6" stroke-width=".3"/>
-          </g>
-          <g transform="translate(400,247) rotate(-1)">
-            <rect x="0" y="0" width="20" height="12" fill="#1e40af" stroke="#3b82f6" stroke-width=".5" rx="1"/>
-            <line x1="10" y1="0" x2="10" y2="12" stroke="#3b82f6" stroke-width=".3"/>
-            <line x1="0" y1="6" x2="20" y2="6" stroke="#3b82f6" stroke-width=".3"/>
-          </g>
-          <!-- Battery icon -->
-          <g transform="translate(620,380)">
-            <rect x="0" y="0" width="40" height="22" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="1"/>
-            <rect x="40" y="6" width="4" height="10" rx="1" fill="#10b981" opacity=".5"/>
-            <rect x="3" y="3" width="24" height="16" rx="2" fill="#10b981" opacity=".7"/>
-          </g>
-          <!-- Stars -->
-          <circle cx="120" cy="80" r="1" fill="#fff" opacity=".6"/>
-          <circle cx="250" cy="50" r="1.2" fill="#fff" opacity=".5"/>
-          <circle cx="380" cy="100" r="1" fill="#fff" opacity=".7"/>
-          <circle cx="500" cy="60" r="1.5" fill="#fff" opacity=".4"/>
-          <circle cx="650" cy="90" r="1" fill="#fff" opacity=".6"/>
-          <circle cx="720" cy="40" r="1.3" fill="#fff" opacity=".5"/>
-          <circle cx="180" cy="130" r="1" fill="#fff" opacity=".4"/>
-          <circle cx="450" cy="30" r="1" fill="#fff" opacity=".6"/>
-          <!-- Water reflection -->
-          <rect x="0" y="430" width="800" height="170" fill="#0f172a" opacity=".4"/>
-          <line x1="100" y1="460" x2="200" y2="458" stroke="#fbbf24" stroke-width=".5" opacity=".3"/>
-          <line x1="400" y1="465" x2="550" y2="462" stroke="#fbbf24" stroke-width=".5" opacity=".2"/>
-          <line x1="250" y1="480" x2="380" y2="478" stroke="#fbbf24" stroke-width=".5" opacity=".15"/>
-        </svg>
-        <div class="art-overlay"></div>
-        <div class="art-text">
-          <h1>CPT Tesla Dash</h1>
-          <p>Monitor and control your entire Powerwall fleet across Cape Town. Real-time solar, battery, and grid analytics.</p>
-          <p style="font-size:11px;opacity:.5;margin-top:6px">Designed by Marco Edwards</p>
-          <div class="art-stats">
-            <div class="art-stat"><div class="as-val">22</div><div class="as-lbl">Sites</div></div>
-            <div class="art-stat"><div class="as-val">24/7</div><div class="as-lbl">Monitoring</div></div>
-            <div class="art-stat"><div class="as-val">R3.50</div><div class="as-lbl">/kWh saved</div></div>
+    <div class="lp-page">
+      <section class="lp-visual">
+        <div class="lp-brand">
+          <span class="lp-tag">Cape Town Grid Intelligence</span>
+          <h1 style="color:#eef6ff">Powering insight beneath Table Mountain.</h1>
+          <p>Monitor and control your entire Powerwall fleet across Cape Town. Real-time solar, battery, and grid analytics at your fingertips.</p>
+          <p class="designer">Designed by Marco Edwards</p>
+        </div>
+        <div class="lp-stats">
+          <div class="lp-stat"><span class="lp-s-lbl">Fleet sites</span><div class="lp-s-val" style="color:#4de1c1">22</div></div>
+          <div class="lp-stat"><span class="lp-s-lbl">Monitoring</span><div class="lp-s-val" style="color:#5aa9ff">24/7</div></div>
+          <div class="lp-stat"><span class="lp-s-lbl">Savings rate</span><div class="lp-s-val" style="color:#4de1c1">R3.50<span style="font-size:12px;opacity:.6">/kWh</span></div></div>
+        </div>
+        <div class="mtn-wrap">
+          <div class="lp-glow"></div>
+          <div class="lp-grid"></div>
+          <div class="lp-lines">
+            <svg viewBox="0 0 1440 900" preserveAspectRatio="none">
+              <path class="lp-line" d="M0,180 C180,170 310,185 480,178 C670,170 860,148 1060,155 C1220,160 1320,178 1440,170"/>
+              <path class="lp-line" d="M0,210 C180,200 330,215 500,208 C700,198 870,180 1080,188 C1240,194 1340,210 1440,202"/>
+              <path class="lp-line" d="M0,240 C170,228 325,246 505,238 C720,228 910,212 1110,220 C1260,226 1350,238 1440,232"/>
+              <path class="lp-tower" d="M180,120 L150,320 L210,320 Z"/>
+              <path class="lp-tower" d="M160,180 L200,180"/>
+              <path class="lp-tower" d="M154,220 L206,220"/>
+              <path class="lp-tower" d="M148,260 L212,260"/>
+              <path class="lp-tower" d="M1180,110 L1148,330 L1212,330 Z"/>
+              <path class="lp-tower" d="M1158,175 L1202,175"/>
+              <path class="lp-tower" d="M1153,220 L1207,220"/>
+              <path class="lp-tower" d="M1148,268 L1212,268"/>
+              <circle cx="300" cy="192" r="3" fill="#ffc857" opacity=".7"><animate attributeName="opacity" values=".7;.15;.7" dur="2s" repeatCount="indefinite"/></circle>
+              <circle cx="800" cy="165" r="3" fill="#ffc857" opacity=".5"><animate attributeName="opacity" values=".5;.1;.5" dur="1.6s" repeatCount="indefinite"/></circle>
+              <circle cx="1100" cy="178" r="3" fill="#ffc857" opacity=".6"><animate attributeName="opacity" values=".6;.12;.6" dur="2.3s" repeatCount="indefinite"/></circle>
+            </svg>
+          </div>
+          <div class="lp-mountain">
+            <svg viewBox="0 0 1440 700" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="mtnFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#17324c"/>
+                  <stop offset="100%" stop-color="#091523"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,530 C110,500 170,470 240,455 C315,438 360,430 430,432 C520,434 580,404 640,392 C710,378 785,380 850,390 C920,400 980,430 1080,438 C1170,444 1250,470 1320,500 C1380,525 1415,540 1440,548 L1440,700 L0,700 Z" fill="url(#mtnFill)"/>
+              <path d="M220,456 C330,432 540,422 710,398 C840,380 970,420 1150,454" stroke="rgba(160,224,255,.25)" stroke-width="3" fill="none"/>
+            </svg>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Login form side -->
-      <div class="login-form-side">
-        <div class="login-card">
-          <!-- PIN Login (default if setup done) -->
+      <section class="lp-panel">
+        <div class="lp-card">
+          <!-- PIN Login -->
           <div class="setup-section" id="pin-login-section">
-            <div style="text-align:center;margin-bottom:24px">
-              <div style="width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">
-                <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              </div>
-              <h2>Welcome back</h2>
-              <div class="login-sub">Enter your 4-digit PIN to continue</div>
+            <div class="lp-eyebrow">Secure access</div>
+            <h2>Welcome back</h2>
+            <p class="lp-sub">Enter your 4-digit PIN to unlock the fleet dashboard.</p>
+            <div class="lp-pin-wrap" id="pin-wrap">
+              <input class="lp-pin" type="tel" maxlength="1" id="pin1" oninput="pinNext(1)" onfocus="this.select()"/>
+              <input class="lp-pin" type="tel" maxlength="1" id="pin2" oninput="pinNext(2)" onfocus="this.select()"/>
+              <input class="lp-pin" type="tel" maxlength="1" id="pin3" oninput="pinNext(3)" onfocus="this.select()"/>
+              <input class="lp-pin" type="tel" maxlength="1" id="pin4" oninput="pinNext(4)" onfocus="this.select()"/>
             </div>
-            <div class="pin-wrap" id="pin-wrap">
-              <input class="pin-input" type="tel" maxlength="1" id="pin1" oninput="pinNext(1)" onfocus="this.select()"/>
-              <input class="pin-input" type="tel" maxlength="1" id="pin2" oninput="pinNext(2)" onfocus="this.select()"/>
-              <input class="pin-input" type="tel" maxlength="1" id="pin3" oninput="pinNext(3)" onfocus="this.select()"/>
-              <input class="pin-input" type="tel" maxlength="1" id="pin4" oninput="pinNext(4)" onfocus="this.select()"/>
-            </div>
-            <div class="pin-error" id="pin-error">Incorrect PIN. Please try again.</div>
-            <button class="login-btn" id="pin-login-btn" onclick="verifyPin()" disabled>Unlock dashboard</button>
-            <span class="setup-link" onclick="showSetup()">Setup or change credentials</span>
+            <div class="lp-pin-error" id="pin-error">Incorrect PIN. Please try again.</div>
+            <button class="lp-btn" id="pin-login-btn" onclick="verifyPin()" disabled>Unlock dashboard</button>
+            <span class="lp-link" onclick="showSetup()">Setup or change credentials</span>
+            <p class="lp-footer">Designed by Marco Edwards</p>
           </div>
 
           <!-- First-time Setup -->
           <div class="setup-section" id="setup-section">
-            <div style="text-align:center;margin-bottom:24px">
-              <div style="width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">
-                <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              </div>
-              <h2>Setup your dashboard</h2>
-              <div class="login-sub">Connect your Tesla Fleet API and set a PIN</div>
-            </div>
-            <div class="field">
+            <div class="lp-eyebrow">First-time setup</div>
+            <h2>Connect your fleet</h2>
+            <p class="lp-sub">Enter your Tesla Fleet API credentials and create a PIN for quick access.</p>
+            <div class="lp-field">
               <label>Tesla Client ID</label>
               <input id="client-id" type="text" placeholder="your-client-id" autocomplete="off"/>
             </div>
-            <div class="field">
+            <div class="lp-field">
               <label>Create a 4-digit PIN</label>
-              <div class="pin-wrap">
-                <input class="pin-input" type="tel" maxlength="1" id="setup-pin1" oninput="setupPinNext(1)" onfocus="this.select()"/>
-                <input class="pin-input" type="tel" maxlength="1" id="setup-pin2" oninput="setupPinNext(2)" onfocus="this.select()"/>
-                <input class="pin-input" type="tel" maxlength="1" id="setup-pin3" oninput="setupPinNext(3)" onfocus="this.select()"/>
-                <input class="pin-input" type="tel" maxlength="1" id="setup-pin4" oninput="setupPinNext(4)" onfocus="this.select()"/>
+              <div class="lp-pin-wrap">
+                <input class="lp-pin" type="tel" maxlength="1" id="setup-pin1" oninput="setupPinNext(1)" onfocus="this.select()"/>
+                <input class="lp-pin" type="tel" maxlength="1" id="setup-pin2" oninput="setupPinNext(2)" onfocus="this.select()"/>
+                <input class="lp-pin" type="tel" maxlength="1" id="setup-pin3" oninput="setupPinNext(3)" onfocus="this.select()"/>
+                <input class="lp-pin" type="tel" maxlength="1" id="setup-pin4" oninput="setupPinNext(4)" onfocus="this.select()"/>
               </div>
             </div>
             <input type="hidden" id="redirect-uri" value="https://makes971-hash.github.io/CPT_tesla_Dash/"/>
             <input type="hidden" id="scope" value="openid offline_access energy_device_data energy_cmds"/>
-            <div id="auth-err" class="err"></div>
-            <button class="login-btn" id="setup-btn" onclick="saveSetupAndAuth()" disabled>Connect with Tesla</button>
-            <span class="setup-link" id="back-to-pin" onclick="showPinLogin()" style="display:none">Back to PIN login</span>
+            <div id="auth-err" style="color:#ff6b6b;font-size:13px;text-align:center;margin-bottom:12px;display:none"></div>
+            <button class="lp-btn" id="setup-btn" onclick="saveSetupAndAuth()" disabled>Connect with Tesla</button>
+            <span class="lp-link" id="back-to-pin" onclick="showPinLogin()" style="display:none">Back to PIN login</span>
+            <p class="lp-footer">Designed by Marco Edwards</p>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 
@@ -752,13 +714,6 @@ function showSetup() {
   }
 }
 
-function clearPins(prefix) {
-  for (let i = 1; i <= 4; i++) {
-    const el = document.getElementById(prefix + i);
-    if (el) { el.value = ''; el.classList.remove('filled'); }
-  }
-}
-
 function pinNext(n) {
   const el = document.getElementById('pin' + n);
   if (el.value.length === 1) {
@@ -767,11 +722,9 @@ function pinNext(n) {
   } else {
     el.classList.remove('filled');
   }
-  // Check if all filled
   let pin = '';
   for (let i = 1; i <= 4; i++) pin += document.getElementById('pin' + i).value;
   document.getElementById('pin-login-btn').disabled = pin.length !== 4;
-  // Auto-submit on last digit
   if (pin.length === 4) setTimeout(() => verifyPin(), 150);
 }
 
@@ -787,6 +740,13 @@ function setupPinNext(n) {
   for (let i = 1; i <= 4; i++) pin += document.getElementById('setup-pin' + i).value;
   const cid = document.getElementById('client-id').value.trim();
   document.getElementById('setup-btn').disabled = pin.length !== 4 || !cid;
+}
+
+function clearPins(prefix) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById(prefix + i);
+    if (el) { el.value = ''; el.classList.remove('filled'); }
+  }
 }
 
 function hashPin(pin) {
@@ -813,9 +773,9 @@ function verifyPin() {
     document.getElementById('pin-error').style.display = 'block';
     clearPins('pin');
     document.getElementById('pin1').focus();
-    // Shake animation
-    document.getElementById('pin-wrap').style.animation = 'shake .4s';
-    setTimeout(() => document.getElementById('pin-wrap').style.animation = '', 400);
+    const wrap = document.getElementById('pin-wrap');
+    wrap.style.animation = 'shake .4s';
+    setTimeout(() => wrap.style.animation = '', 400);
   }
 }
 
