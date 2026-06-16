@@ -618,6 +618,96 @@ const REDIRECT = 'https://makes971-hash.github.io/CPT_tesla_Dash/';
 
 let token = null, sites = [], liveData = {}, chart = null, activeTab = 'fleet';
 let selectedReserve = null, selectedSites = new Set();
+let refreshTimer = null;
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+// Token refresh
+async function refreshToken() {
+  const rtok = sessionStorage.getItem('rtok');
+  const cid = sessionStorage.getItem('cid') || localStorage.getItem('cpt_client_id');
+  if (!rtok || !cid) return false;
+  try {
+    const r = await fetch(`${PROXY}/refresh`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ client_id: cid, refresh_token: rtok })
+    });
+    if (!r.ok) return false;
+    const d = await r.json();
+    if (d.access_token) {
+      token = d.access_token;
+      sessionStorage.setItem('tok', token);
+      if (d.refresh_token) sessionStorage.setItem('rtok', d.refresh_token);
+      return true;
+    }
+  } catch(_) {}
+  return false;
+}
+
+// API call with retry and auto-refresh
+async function api(path, method='GET', body=null) {
+  const maxRetries = 2;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const opts = {method, headers:{Authorization:`Bearer ${token}`, 'Content-Type':'application/json'}};
+      if (body) opts.body = JSON.stringify(body);
+      const r = await fetch(`${PROXY}/api/1${path}`, opts);
+
+      // Token expired — try refresh
+      if (r.status === 401 && attempt === 0) {
+        const refreshed = await refreshToken();
+        if (refreshed) continue;
+        logout();
+        throw new Error('Session expired — please sign in again');
+      }
+
+      if (r.ok) return r.json();
+
+      // Rate limited — wait and retry
+      if (r.status === 429 && attempt < maxRetries) {
+        await new Promise(res => setTimeout(res, 2000 * (attempt + 1)));
+        continue;
+      }
+
+      // Server error — retry
+      if ((r.status >= 500) && attempt < maxRetries) {
+        await new Promise(res => setTimeout(res, 1000 * (attempt + 1)));
+        continue;
+      }
+
+      throw new Error(`API error ${r.status}`);
+    } catch(e) {
+      if (attempt === maxRetries || e.message.includes('Session expired')) throw e;
+      await new Promise(res => setTimeout(res, 1000 * (attempt + 1)));
+    }
+  }
+}
+
+// Auto-refresh
+function startAutoRefresh() {
+  stopAutoRefresh();
+  refreshTimer = setInterval(() => {
+    if (activeTab === 'fleet') {
+      liveData = {};
+      loadFleet();
+    }
+    updateLastRefreshTime();
+  }, REFRESH_INTERVAL);
+  updateLastRefreshTime();
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+}
+
+function updateLastRefreshTime() {
+  const el = document.getElementById('live-ind');
+  if (el) {
+    const now = new Date();
+    const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+    el.innerHTML = `<div class="dot"></div>Live · ${time}`;
+  }
+}
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -780,20 +870,13 @@ async function handleCallback(code, state) {
   }
 }
 
-async function api(path, method='GET', body=null) {
-  const opts = {method, headers:{Authorization:`Bearer ${token}`, 'Content-Type':'application/json'}};
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(`${PROXY}/api/1${path}`, opts);
-  if (!r.ok) throw new Error(`API error ${r.status}`);
-  return r.json();
-}
-
 async function showDashboard() {
   showPage('dashboard-page');
   document.getElementById('logout-btn').style.display = '';
   document.getElementById('refresh-btn').style.display = '';
   document.getElementById('live-ind').style.display = 'flex';
   document.getElementById('chat-toggle').style.display = 'flex';
+  startAutoRefresh();
   await loadFleet();
 }
 
@@ -1263,6 +1346,7 @@ function switchTab(tab) {
 function refreshData() { liveData={}; if(activeTab==='fleet') loadFleet(); else if(activeTab==='alerts') loadAlerts(); else loadFleet(); }
 
 function logout() {
+  stopAutoRefresh();
   sessionStorage.clear(); token=null; sites=[]; liveData={};
   ['logout-btn','refresh-btn'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('live-ind').style.display='none';
