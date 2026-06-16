@@ -131,6 +131,226 @@ export default {
         });
       }
 
+      // Power BI endpoint - secured by API key
+      if (path === '/powerbi' || path.startsWith('/powerbi/')) {
+        const key = url.searchParams.get('key');
+        if (!key || key !== env.POWERBI_KEY) {
+          return new Response(JSON.stringify({ error: 'Invalid API key' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+
+        // Get or refresh token
+        let pbiToken = getCached('pbi_token');
+        if (!pbiToken) {
+          const params = new URLSearchParams();
+          params.append('grant_type', 'refresh_token');
+          params.append('client_id', env.TESLA_CLIENT_ID);
+          params.append('refresh_token', env.TESLA_REFRESH_TOKEN);
+          params.append('scope', 'openid offline_access energy_device_data energy_cmds');
+          const tokenResp = await fetch(TESLA_TOKEN_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params,
+          });
+          const tokenData = await tokenResp.json();
+          if (!tokenData.access_token) {
+            return new Response(JSON.stringify({ error: 'Token refresh failed', detail: tokenData }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+          pbiToken = tokenData.access_token;
+          setCache('pbi_token', pbiToken);
+        }
+
+        const pbiHeaders = { 'Authorization': `Bearer ${pbiToken}`, 'Content-Type': 'application/json' };
+
+        // Helper to fetch from Tesla with region fallback
+        async function teslaPbiGet(apiPath) {
+          for (const base of REGIONS) {
+            const resp = await fetch(`${base}${apiPath}`, { headers: pbiHeaders });
+            if (resp.status !== 421) return resp;
+          }
+          return await fetch(`${REGIONS[1]}${apiPath}`, { headers: pbiHeaders });
+        }
+
+        const subPath = path.replace('/powerbi', '') || '/';
+
+        // /powerbi or /powerbi/sites - flat table of all sites with live data
+        if (subPath === '/' || subPath === '/sites') {
+          const cached = getCached('pbi_sites');
+          if (cached) {
+            return new Response(JSON.stringify(cached), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT', ...corsHeaders },
+            });
+          }
+
+          const productsResp = await teslaPbiGet('/products');
+          if (!productsResp.ok) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch products' }), {
+              status: 502, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+          const products = await productsResp.json();
+          const energySites = (products.response || []).filter(p => p.resource_type === 'battery' || p.energy_site_id);
+
+          const rows = [];
+          const CPT_RATE = 3.50;
+          const now = new Date().toISOString();
+
+          for (const site of energySites) {
+            const row = {
+              site_id: site.energy_site_id,
+              site_name: site.site_name || 'Unknown',
+              gateway_id: site.gateway_id || null,
+              has_solar: site.components?.solar || false,
+              has_battery: site.components?.battery || false,
+              battery_type: site.battery_type || null,
+              solar_power_kw: 0,
+              load_power_kw: 0,
+              grid_power_kw: 0,
+              battery_power_kw: 0,
+              battery_pct: 0,
+              grid_status: 'Unknown',
+              island_status: 'Unknown',
+              grid_importing: false,
+              grid_exporting: false,
+              is_online: !!site.gateway_id,
+              estimated_savings_rand: 0,
+              rate_per_kwh: CPT_RATE,
+              timestamp: now,
+            };
+
+            try {
+              const liveResp = await teslaPbiGet(`/energy_sites/${site.energy_site_id}/live_status`);
+              if (liveResp.ok) {
+                const live = (await liveResp.json()).response;
+                if (live) {
+                  row.solar_power_kw = +(live.solar_power / 1000).toFixed(3);
+                  row.load_power_kw = +(live.load_power / 1000).toFixed(3);
+                  row.grid_power_kw = +(live.grid_power / 1000).toFixed(3);
+                  row.battery_power_kw = +(live.battery_power / 1000).toFixed(3);
+                  row.battery_pct = +live.percentage_charged.toFixed(1);
+                  row.grid_status = live.grid_status || 'Unknown';
+                  row.island_status = live.island_status || 'Unknown';
+                  row.grid_importing = live.grid_power > 0;
+                  row.grid_exporting = live.grid_power < 0;
+                  row.estimated_savings_rand = +(row.solar_power_kw * CPT_RATE).toFixed(2);
+                }
+              }
+            } catch (_) {}
+
+            rows.push(row);
+          }
+
+          const result = { fleet_size: rows.length, timestamp: now, rate_per_kwh: CPT_RATE, sites: rows };
+          setCache('pbi_sites', result);
+
+          return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS', ...corsHeaders },
+          });
+        }
+
+        // /powerbi/history?site_id=XXX&period=day|week|month
+        if (subPath === '/history') {
+          const siteId = url.searchParams.get('site_id');
+          const period = url.searchParams.get('period') || 'day';
+          if (!siteId) {
+            return new Response(JSON.stringify({ error: 'site_id required' }), {
+              status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+
+          const cacheKey = `pbi_hist_${siteId}_${period}`;
+          const cached2 = getCached(cacheKey);
+          if (cached2) {
+            return new Response(JSON.stringify(cached2), {
+              status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT', ...corsHeaders },
+            });
+          }
+
+          const histResp = await teslaPbiGet(`/energy_sites/${siteId}/calendar_history?kind=power&period=${period}`);
+          if (!histResp.ok) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch history' }), {
+              status: 502, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+          const histData = await histResp.json();
+          const series = histData.response?.time_series || [];
+
+          const rows = series.map(d => ({
+            timestamp: d.timestamp,
+            solar_power_kw: +((d.solar_power || 0) / 1000).toFixed(3),
+            load_power_kw: +((d.load_power || 0) / 1000).toFixed(3),
+            grid_power_kw: +((d.grid_power || 0) / 1000).toFixed(3),
+            battery_power_kw: +((d.battery_power || 0) / 1000).toFixed(3),
+          }));
+
+          const result = { site_id: siteId, period, data_points: rows.length, history: rows };
+          setCache(cacheKey, result);
+
+          return new Response(JSON.stringify(result), {
+            status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS', ...corsHeaders },
+          });
+        }
+
+        // /powerbi/summary - fleet totals
+        if (subPath === '/summary') {
+          const cached3 = getCached('pbi_summary');
+          if (cached3) {
+            return new Response(JSON.stringify(cached3), {
+              status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT', ...corsHeaders },
+            });
+          }
+
+          // Reuse sites data
+          const sitesResp = await fetch(`${url.origin}/powerbi/sites?key=${key}`);
+          const sitesData = await sitesResp.json();
+          const sites = sitesData.sites || [];
+
+          let totalSolar=0, totalLoad=0, totalGridImport=0, totalGridExport=0, totalBatt=0, battCount=0, onlineCount=0;
+          sites.forEach(s => {
+            totalSolar += s.solar_power_kw;
+            totalLoad += s.load_power_kw;
+            if (s.grid_power_kw > 0) totalGridImport += s.grid_power_kw;
+            else totalGridExport += Math.abs(s.grid_power_kw);
+            totalBatt += s.battery_pct;
+            battCount++;
+            if (s.is_online) onlineCount++;
+          });
+
+          const CPT_RATE = 3.50;
+          const result = {
+            fleet_size: sites.length,
+            online_count: onlineCount,
+            offline_count: sites.length - onlineCount,
+            total_solar_kw: +totalSolar.toFixed(2),
+            total_load_kw: +totalLoad.toFixed(2),
+            total_grid_import_kw: +totalGridImport.toFixed(2),
+            total_grid_export_kw: +totalGridExport.toFixed(2),
+            avg_battery_pct: battCount ? +(totalBatt / battCount).toFixed(1) : 0,
+            grid_dependence_pct: totalLoad > 0 ? +(totalGridImport / totalLoad * 100).toFixed(1) : 0,
+            solar_contribution_pct: totalLoad > 0 ? +(totalSolar / totalLoad * 100).toFixed(1) : 0,
+            estimated_hourly_savings_rand: +(totalSolar * CPT_RATE).toFixed(2),
+            rate_per_kwh: CPT_RATE,
+            timestamp: new Date().toISOString(),
+          };
+          setCache('pbi_summary', result);
+
+          return new Response(JSON.stringify(result), {
+            status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS', ...corsHeaders },
+          });
+        }
+
+        return new Response(JSON.stringify({ error: 'Unknown powerbi endpoint', available: ['/powerbi/sites', '/powerbi/summary', '/powerbi/history?site_id=X&period=day'] }), {
+          status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
+
       // Proxy Tesla API calls with caching and retry
       if (path.startsWith('/api/1/')) {
         const teslaPath = path.replace('/api/1', '');
