@@ -13,15 +13,18 @@ const cache = new Map();
 function getCached(key) {
   const entry = cache.get(key);
   if (!entry) return null;
+
   if (Date.now() - entry.time > CACHE_TTL * 1000) {
     cache.delete(key);
     return null;
   }
+
   return entry.data;
 }
 
 function setCache(key, data) {
   cache.set(key, { data, time: Date.now() });
+
   // Limit cache size
   if (cache.size > 200) {
     const oldest = cache.keys().next().value;
@@ -38,7 +41,10 @@ export default {
     };
 
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders });
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+      });
     }
 
     const url = new URL(request.url);
@@ -48,21 +54,30 @@ export default {
       // Token exchange
       if (path === '/token' && request.method === 'POST') {
         const body = await request.text();
+
         const resp = await fetch(TESLA_TOKEN_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
           body,
         });
+
         const data = await resp.json();
+
         return new Response(JSON.stringify(data), {
           status: resp.status,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
         });
       }
 
       // Token refresh
       if (path === '/refresh' && request.method === 'POST') {
         const body = await request.json();
+
         const params = new URLSearchParams();
         params.append('grant_type', 'refresh_token');
         params.append('client_id', body.client_id);
@@ -71,21 +86,30 @@ export default {
 
         const resp = await fetch(TESLA_TOKEN_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
           body: params,
         });
+
         const data = await resp.json();
+
         return new Response(JSON.stringify(data), {
           status: resp.status,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
         });
       }
 
       // Partner registration
       if (path === '/register' && request.method === 'POST') {
         const body = await request.json();
+
         const clientId = body.client_id;
         const clientSecret = body.client_secret || env.TESLA_CLIENT_SECRET;
+
         const params = new URLSearchParams();
         params.append('grant_type', 'client_credentials');
         params.append('client_id', clientId);
@@ -95,7 +119,9 @@ export default {
 
         const tokenResp = await fetch(TESLA_TOKEN_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
           body: params,
         });
 
@@ -104,10 +130,13 @@ export default {
         if (!tokenData.access_token) {
           return new Response(JSON.stringify({
             error: 'Failed to get partner token',
-            detail: tokenData
+            detail: tokenData,
           }), {
             status: 400,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
           });
         }
 
@@ -118,44 +147,75 @@ export default {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${tokenData.access_token}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ domain: 'makes971-hash.github.io' }),
+            body: JSON.stringify({
+              domain: 'makes971-hash.github.io',
+            }),
           });
+
+          let regData = null;
+
+          try {
+            regData = await regResp.json();
+          } catch (e) {
+            regData = {
+              error: 'Could not parse registration response',
+            };
+          }
 
           results.push({
             region: base,
             status: regResp.status,
-            data: await regResp.json()
+            data: regData,
           });
         }
 
-        return new Response(JSON.stringify({ success: true, results }), {
+        return new Response(JSON.stringify({
+          success: true,
+          results,
+        }), {
           status: 200,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
         });
       }
 
-      // Health check with Cloudflare secret diagnostics
+      // Health check with full secret diagnostics
       if (path === '/health') {
+        const visibleEnvKeys = Object.keys(env || {}).sort();
+
         return new Response(JSON.stringify({
           status: 'ok',
           cache_size: cache.size,
 
+          env_keys_visible_to_worker: visibleEnvKeys,
+
           powerbi_key_loaded: !!env.POWERBI_KEY,
-          powerbi_key_length: env.POWERBI_KEY ? env.POWERBI_KEY.trim().length : 0,
+          powerbi_key_type: typeof env.POWERBI_KEY,
+          powerbi_key_length: env.POWERBI_KEY ? String(env.POWERBI_KEY).trim().length : 0,
 
           tesla_client_id_loaded: !!env.TESLA_CLIENT_ID,
-          tesla_client_id_length: env.TESLA_CLIENT_ID ? env.TESLA_CLIENT_ID.trim().length : 0,
+          tesla_client_id_type: typeof env.TESLA_CLIENT_ID,
+          tesla_client_id_length: env.TESLA_CLIENT_ID ? String(env.TESLA_CLIENT_ID).trim().length : 0,
 
           tesla_refresh_token_loaded: !!env.TESLA_REFRESH_TOKEN,
-          tesla_refresh_token_length: env.TESLA_REFRESH_TOKEN ? env.TESLA_REFRESH_TOKEN.trim().length : 0,
+          tesla_refresh_token_type: typeof env.TESLA_REFRESH_TOKEN,
+          tesla_refresh_token_length: env.TESLA_REFRESH_TOKEN ? String(env.TESLA_REFRESH_TOKEN).trim().length : 0,
 
           tesla_client_secret_loaded: !!env.TESLA_CLIENT_SECRET,
-          timestamp: new Date().toISOString()
-        }), {
+          tesla_client_secret_type: typeof env.TESLA_CLIENT_SECRET,
+
+          timestamp: new Date().toISOString(),
+        }, null, 2), {
           status: 200,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+            ...corsHeaders,
+          },
         });
       }
 
@@ -169,11 +229,16 @@ export default {
             error: 'POWERBI_KEY secret is missing',
             debug: {
               supplied_key_length: key.length,
-              expected_key_length: 0
-            }
-          }), {
+              expected_key_length: 0,
+              env_keys_visible_to_worker: Object.keys(env || {}).sort(),
+            },
+          }, null, 2), {
             status: 500,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+              ...corsHeaders,
+            },
           });
         }
 
@@ -182,11 +247,45 @@ export default {
             error: 'Invalid API key',
             debug: {
               supplied_key_length: key.length,
-              expected_key_length: expectedKey.length
-            }
-          }), {
+              expected_key_length: expectedKey.length,
+            },
+          }, null, 2), {
             status: 401,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+              ...corsHeaders,
+            },
+          });
+        }
+
+        if (!env.TESLA_CLIENT_ID) {
+          return new Response(JSON.stringify({
+            error: 'TESLA_CLIENT_ID secret is missing',
+            debug: {
+              env_keys_visible_to_worker: Object.keys(env || {}).sort(),
+            },
+          }, null, 2), {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          });
+        }
+
+        if (!env.TESLA_REFRESH_TOKEN) {
+          return new Response(JSON.stringify({
+            error: 'TESLA_REFRESH_TOKEN secret is missing',
+            debug: {
+              env_keys_visible_to_worker: Object.keys(env || {}).sort(),
+            },
+          }, null, 2), {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
           });
         }
 
@@ -202,19 +301,33 @@ export default {
 
           const tokenResp = await fetch(TESLA_TOKEN_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
             body: params,
           });
 
-          const tokenData = await tokenResp.json();
+          let tokenData = null;
+
+          try {
+            tokenData = await tokenResp.json();
+          } catch (e) {
+            tokenData = {
+              error: 'Could not parse Tesla token response',
+            };
+          }
 
           if (!tokenData.access_token) {
             return new Response(JSON.stringify({
               error: 'Token refresh failed',
-              detail: tokenData
-            }), {
+              status: tokenResp.status,
+              detail: tokenData,
+            }, null, 2), {
               status: 500,
-              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+              headers: {
+                'Content-Type': 'application/json',
+                ...corsHeaders,
+              },
             });
           }
 
@@ -224,17 +337,24 @@ export default {
 
         const pbiHeaders = {
           'Authorization': `Bearer ${pbiToken}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         };
 
         // Helper to fetch from Tesla with region fallback
         async function teslaPbiGet(apiPath) {
           for (const base of REGIONS) {
-            const resp = await fetch(`${base}${apiPath}`, { headers: pbiHeaders });
-            if (resp.status !== 421) return resp;
+            const resp = await fetch(`${base}${apiPath}`, {
+              headers: pbiHeaders,
+            });
+
+            if (resp.status !== 421) {
+              return resp;
+            }
           }
 
-          return await fetch(`${REGIONS[1]}${apiPath}`, { headers: pbiHeaders });
+          return await fetch(`${REGIONS[1]}${apiPath}`, {
+            headers: pbiHeaders,
+          });
         }
 
         const subPath = path.replace('/powerbi', '') || '/';
@@ -244,12 +364,12 @@ export default {
           const cached = getCached('pbi_sites');
 
           if (cached) {
-            return new Response(JSON.stringify(cached), {
+            return new Response(JSON.stringify(cached, null, 2), {
               status: 200,
               headers: {
                 'Content-Type': 'application/json',
                 'X-Cache': 'HIT',
-                ...corsHeaders
+                ...corsHeaders,
               },
             });
           }
@@ -257,13 +377,18 @@ export default {
           const productsResp = await teslaPbiGet('/products');
 
           if (!productsResp.ok) {
+            const detail = await productsResp.text();
+
             return new Response(JSON.stringify({
               error: 'Failed to fetch products',
               status: productsResp.status,
-              detail: await productsResp.text()
-            }), {
+              detail,
+            }, null, 2), {
               status: 502,
-              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+              headers: {
+                'Content-Type': 'application/json',
+                ...corsHeaders,
+              },
             });
           }
 
@@ -303,7 +428,8 @@ export default {
               const liveResp = await teslaPbiGet(`/energy_sites/${site.energy_site_id}/live_status`);
 
               if (liveResp.ok) {
-                const live = (await liveResp.json()).response;
+                const liveData = await liveResp.json();
+                const live = liveData.response;
 
                 if (live) {
                   row.solar_power_kw = +((live.solar_power || 0) / 1000).toFixed(3);
@@ -311,7 +437,7 @@ export default {
                   row.grid_power_kw = +((live.grid_power || 0) / 1000).toFixed(3);
                   row.battery_power_kw = +((live.battery_power || 0) / 1000).toFixed(3);
                   row.battery_pct = live.percentage_charged != null
-                    ? +live.percentage_charged.toFixed(1)
+                    ? +Number(live.percentage_charged).toFixed(1)
                     : 0;
                   row.grid_status = live.grid_status || 'Unknown';
                   row.island_status = live.island_status || 'Unknown';
@@ -319,6 +445,8 @@ export default {
                   row.grid_exporting = (live.grid_power || 0) < 0;
                   row.estimated_savings_rand = +(row.solar_power_kw * CPT_RATE).toFixed(2);
                 }
+              } else {
+                row.live_error = `Live status failed with ${liveResp.status}`;
               }
             } catch (e) {
               row.live_error = e.message;
@@ -331,17 +459,17 @@ export default {
             fleet_size: rows.length,
             timestamp: now,
             rate_per_kwh: CPT_RATE,
-            sites: rows
+            sites: rows,
           };
 
           setCache('pbi_sites', result);
 
-          return new Response(JSON.stringify(result), {
+          return new Response(JSON.stringify(result, null, 2), {
             status: 200,
             headers: {
               'Content-Type': 'application/json',
               'X-Cache': 'MISS',
-              ...corsHeaders
+              ...corsHeaders,
             },
           });
         }
@@ -352,9 +480,14 @@ export default {
           const period = url.searchParams.get('period') || 'day';
 
           if (!siteId) {
-            return new Response(JSON.stringify({ error: 'site_id required' }), {
+            return new Response(JSON.stringify({
+              error: 'site_id required',
+            }, null, 2), {
               status: 400,
-              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+              headers: {
+                'Content-Type': 'application/json',
+                ...corsHeaders,
+              },
             });
           }
 
@@ -362,12 +495,12 @@ export default {
           const cached2 = getCached(cacheKey);
 
           if (cached2) {
-            return new Response(JSON.stringify(cached2), {
+            return new Response(JSON.stringify(cached2, null, 2), {
               status: 200,
               headers: {
                 'Content-Type': 'application/json',
                 'X-Cache': 'HIT',
-                ...corsHeaders
+                ...corsHeaders,
               },
             });
           }
@@ -377,13 +510,18 @@ export default {
           );
 
           if (!histResp.ok) {
+            const detail = await histResp.text();
+
             return new Response(JSON.stringify({
               error: 'Failed to fetch history',
               status: histResp.status,
-              detail: await histResp.text()
-            }), {
+              detail,
+            }, null, 2), {
               status: 502,
-              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+              headers: {
+                'Content-Type': 'application/json',
+                ...corsHeaders,
+              },
             });
           }
 
@@ -402,17 +540,17 @@ export default {
             site_id: siteId,
             period,
             data_points: rows.length,
-            history: rows
+            history: rows,
           };
 
           setCache(cacheKey, result);
 
-          return new Response(JSON.stringify(result), {
+          return new Response(JSON.stringify(result, null, 2), {
             status: 200,
             headers: {
               'Content-Type': 'application/json',
               'X-Cache': 'MISS',
-              ...corsHeaders
+              ...corsHeaders,
             },
           });
         }
@@ -422,12 +560,12 @@ export default {
           const cached3 = getCached('pbi_summary');
 
           if (cached3) {
-            return new Response(JSON.stringify(cached3), {
+            return new Response(JSON.stringify(cached3, null, 2), {
               status: 200,
               headers: {
                 'Content-Type': 'application/json',
                 'X-Cache': 'HIT',
-                ...corsHeaders
+                ...corsHeaders,
               },
             });
           }
@@ -458,7 +596,9 @@ export default {
             totalBatt += Number(s.battery_pct) || 0;
             battCount++;
 
-            if (s.is_online) onlineCount++;
+            if (s.is_online) {
+              onlineCount++;
+            }
           });
 
           const CPT_RATE = 3.50;
@@ -481,12 +621,12 @@ export default {
 
           setCache('pbi_summary', result);
 
-          return new Response(JSON.stringify(result), {
+          return new Response(JSON.stringify(result, null, 2), {
             status: 200,
             headers: {
               'Content-Type': 'application/json',
               'X-Cache': 'MISS',
-              ...corsHeaders
+              ...corsHeaders,
             },
           });
         }
@@ -496,11 +636,14 @@ export default {
           available: [
             '/powerbi/sites',
             '/powerbi/summary',
-            '/powerbi/history?site_id=X&period=day'
-          ]
-        }), {
+            '/powerbi/history?site_id=X&period=day',
+          ],
+        }, null, 2), {
           status: 404,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
         });
       }
 
@@ -520,7 +663,7 @@ export default {
               headers: {
                 'Content-Type': 'application/json',
                 'X-Cache': 'HIT',
-                ...corsHeaders
+                ...corsHeaders,
               },
             });
           }
@@ -554,7 +697,9 @@ export default {
                 },
               };
 
-              if (bodyText) fetchOpts.body = bodyText;
+              if (bodyText) {
+                fetchOpts.body = bodyText;
+              }
 
               lastResp = await fetch(teslaUrl, fetchOpts);
 
@@ -565,7 +710,9 @@ export default {
               }
 
               // If region mismatch, try next region
-              if (lastResp.status === 421) break;
+              if (lastResp.status === 421) {
+                break;
+              }
 
               // Success or non-retryable error
               if (
@@ -581,6 +728,7 @@ export default {
                 if (request.method === 'GET' && lastResp.ok) {
                   const data = await lastResp.json();
                   const cacheKey = teslaPath + url.search;
+
                   setCache(cacheKey, data);
 
                   return new Response(JSON.stringify(data), {
@@ -588,7 +736,7 @@ export default {
                     headers: {
                       'Content-Type': 'application/json',
                       'X-Cache': 'MISS',
-                      ...corsHeaders
+                      ...corsHeaders,
                     },
                   });
                 }
@@ -597,7 +745,10 @@ export default {
 
                 return new Response(data, {
                   status: lastResp.status,
-                  headers: { 'Content-Type': 'application/json', ...corsHeaders },
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...corsHeaders,
+                  },
                 });
               }
 
@@ -615,7 +766,9 @@ export default {
           }
 
           // If not 421, don't try next region
-          if (lastResp && lastResp.status !== 421) break;
+          if (lastResp && lastResp.status !== 421) {
+            break;
+          }
         }
 
         // Return whatever we got
@@ -624,29 +777,39 @@ export default {
 
           return new Response(data, {
             status: lastResp.status,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
           });
         }
 
         return new Response(JSON.stringify({
-          error: lastError?.message || 'All retries failed'
-        }), {
+          error: lastError?.message || 'All retries failed',
+        }, null, 2), {
           status: 502,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
         });
       }
 
       return new Response('Not found', {
         status: 404,
-        headers: corsHeaders
+        headers: corsHeaders,
       });
 
     } catch (e) {
       return new Response(JSON.stringify({
-        error: e.message
-      }), {
+        error: e.message,
+        stack: e.stack,
+      }, null, 2), {
         status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
       });
     }
   },
