@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="pragma" content="no-cache"/>
 <title>CPT Tesla Dash — by Marco Edwards</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -589,9 +591,9 @@ function renderTokenSummary() {
   const avgDays = active.length ? active.reduce((a, s) => a + Math.floor(s.tokens / s.gridUsage), 0) / active.length : 0;
   document.getElementById('token-summary-grid').innerHTML =
     '<div class="token-stat"><div class="ts-label">Total tokens</div><div class="ts-value">' + Math.round(total).toLocaleString() + ' kWh</div><div class="ts-sub">Across ' + tokenSites.length + ' sites</div></div>' +
-    '<div class="token-stat ts-alert"><div class="ts-label">Low token alerts</div><div class="ts-value">' + low + '</div><div class="ts-sub">Sites below 200 kWh</div></div>' +
+    '<div class="token-stat ts-alert"><div class="ts-label">Low token alerts</div><div class="ts-value">' + low + '</div><div class="ts-sub">Sites below 1,100 kWh</div></div>' +
     '<div class="token-stat"><div class="ts-label">Avg days remaining</div><div class="ts-value">' + (active.length ? Math.round(avgDays) : '—') + '</div><div class="ts-sub">Active sites only</div></div>' +
-    '<div class="token-stat"><div class="ts-label">Alert threshold</div><div class="ts-value">200 kWh</div><div class="ts-sub">Email: ' + ALERT_EMAIL + '</div></div>';
+    '<div class="token-stat"><div class="ts-label">Alert threshold</div><div class="ts-value">1,100 kWh</div><div class="ts-sub">Email: ' + ALERT_EMAIL + '</div></div>';
 }
 
 function renderTokenAlerts() {
@@ -601,7 +603,7 @@ function renderTokenAlerts() {
   let html = '';
   if (low.length) {
     html += '<div class="token-alert-box"><span style="font-size:18px">&#9888;&#65039;</span><div>' +
-      '<div class="ta-title">' + low.length + ' site' + (low.length > 1 ? 's' : '') + ' below 200 kWh — alert sent to ' + ALERT_EMAIL + '</div>' +
+      '<div class="ta-title">' + low.length + ' site' + (low.length > 1 ? 's' : '') + ' below 1,100 kWh — alert sent to ' + ALERT_EMAIL + '</div>' +
       '<div class="ta-body">' + low.map(s => s.name + ': ' + Math.round(s.tokens) + ' kWh').join(' · ') + '</div>' +
       '</div></div>';
   }
