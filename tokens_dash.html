@@ -262,7 +262,7 @@
   /* MANUAL BALANCE MODAL */
   .balance-modal {
     background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: var(--radius); padding: 24px; width: 360px; max-width: 95vw;
+    border-radius: var(--radius); padding: 24px; width: 420px; max-width: 95vw;
   }
 
   @media (max-width: 700px) {
@@ -305,15 +305,57 @@
 <!-- BALANCE EDIT MODAL -->
 <div class="modal-backdrop" id="balanceModal" style="display:none">
   <div class="balance-modal">
-    <h2 style="font-size:15px;margin-bottom:12px">Set token balance</h2>
-    <div class="field">
-      <label id="balanceModalLabel">Balance (kWh)</label>
-      <input type="number" id="balanceInput" min="0" placeholder="e.g. 3500">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h2 style="font-size:15px;margin:0" id="balanceModalTitle">Manage tokens</h2>
+      <button class="btn" onclick="closeBalanceModal()" style="padding:4px 8px"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-footer">
-      <button class="btn" onclick="closeBalanceModal()">Cancel</button>
-      <button class="btn primary" onclick="saveBalance()">Save</button>
+    <div id="balanceModalSiteName" style="font-size:12px;color:var(--text3);margin-bottom:14px"></div>
+
+    <!-- TAB ROW -->
+    <div style="display:flex;gap:0;margin-bottom:16px;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden">
+      <button id="tabSet" onclick="switchBalanceTab('set')" style="flex:1;padding:7px;font-size:13px;cursor:pointer;border:none;background:var(--blue);color:#fff;transition:background 0.15s">Set balance</button>
+      <button id="tabAdd" onclick="switchBalanceTab('add')" style="flex:1;padding:7px;font-size:13px;cursor:pointer;border:none;background:var(--bg3);color:var(--text2);transition:background 0.15s">Add tokens</button>
     </div>
+
+    <!-- SET PANEL -->
+    <div id="panelSet">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Override the stored balance with a specific value. Use this when you know the exact current balance.</div>
+      <div class="field">
+        <label>New balance (kWh)</label>
+        <input type="number" id="balanceSetInput" min="0" placeholder="e.g. 3500">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <span style="font-size:12px;color:var(--text3)">Current: <span id="currentBalanceDisplay" style="color:var(--text2)">—</span> kWh</span>
+        <button class="btn primary" onclick="saveSetBalance()"><i class="ti ti-check"></i> Set balance</button>
+      </div>
+    </div>
+
+    <!-- ADD PANEL -->
+    <div id="panelAdd" style="display:none">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Top up the balance by adding kWh to the current amount. Use this when you purchase additional tokens.</div>
+      <div class="field">
+        <label>Amount to add (kWh)</label>
+        <input type="number" id="balanceAddInput" min="1" placeholder="e.g. 1000">
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;font-size:13px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="color:var(--text3)">Current balance</span>
+          <span id="addCurrentDisplay">— kWh</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="color:var(--text3)">Adding</span>
+          <span id="addAmountDisplay" style="color:var(--green)">+ 0 kWh</span>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;display:flex;justify-content:space-between;font-weight:600">
+          <span>New balance</span>
+          <span id="addNewDisplay" style="color:var(--blue)">— kWh</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn primary" onclick="saveAddTokens()"><i class="ti ti-plus"></i> Add tokens</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -393,7 +435,7 @@
           <div class="detail-meta" id="detailMeta">—</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn" id="editBalanceBtn" onclick="openBalanceModal()"><i class="ti ti-pencil"></i> Set balance</button>
+          <button class="btn" id="editBalanceBtn" onclick="openBalanceModal()"><i class="ti ti-coin"></i> Manage tokens</button>
           <button class="btn" onclick="closeDetail()"><i class="ti ti-x"></i> Close</button>
         </div>
       </div>
@@ -736,12 +778,19 @@ function closeDetail() {
   renderCards();
 }
 
-// Manual balance editor
+// Token management modal
 function openBalanceModal() {
   if (!selectedSiteId) return;
   const site = sitesData.find(function(s) { return s.id === selectedSiteId; });
-  document.getElementById('balanceModalLabel').textContent = 'Balance for ' + (site ? site.name : selectedSiteId) + ' (kWh)';
-  document.getElementById('balanceInput').value = site ? site.balance : '';
+  const bal = site ? site.balance : 0;
+  document.getElementById('balanceModalSiteName').textContent = site ? site.name + '  ·  ID: ' + site.id : '';
+  document.getElementById('currentBalanceDisplay').textContent = bal.toLocaleString();
+  document.getElementById('addCurrentDisplay').textContent = bal.toLocaleString() + ' kWh';
+  document.getElementById('addNewDisplay').textContent = bal.toLocaleString() + ' kWh';
+  document.getElementById('balanceSetInput').value = '';
+  document.getElementById('balanceAddInput').value = '';
+  document.getElementById('addAmountDisplay').textContent = '+ 0 kWh';
+  switchBalanceTab('set');
   document.getElementById('balanceModal').style.display = 'flex';
 }
 
@@ -749,21 +798,57 @@ function closeBalanceModal() {
   document.getElementById('balanceModal').style.display = 'none';
 }
 
-function saveBalance() {
-  const val = parseInt(document.getElementById('balanceInput').value, 10);
-  if (isNaN(val) || val < 0) { showToast('Enter a valid balance', 'err'); return; }
+function switchBalanceTab(tab) {
+  const isSet = tab === 'set';
+  document.getElementById('panelSet').style.display = isSet ? 'block' : 'none';
+  document.getElementById('panelAdd').style.display = isSet ? 'none' : 'block';
+  document.getElementById('tabSet').style.background = isSet ? 'var(--blue)' : 'var(--bg3)';
+  document.getElementById('tabSet').style.color = isSet ? '#fff' : 'var(--text2)';
+  document.getElementById('tabAdd').style.background = isSet ? 'var(--bg3)' : 'var(--blue)';
+  document.getElementById('tabAdd').style.color = isSet ? 'var(--text2)' : '#fff';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var addInput = document.getElementById('balanceAddInput');
+  if (addInput) {
+    addInput.addEventListener('input', function() {
+      const site = sitesData.find(function(s) { return s.id === selectedSiteId; });
+      const cur = site ? site.balance : 0;
+      const adding = parseInt(this.value, 10) || 0;
+      document.getElementById('addAmountDisplay').textContent = '+ ' + adding.toLocaleString() + ' kWh';
+      document.getElementById('addNewDisplay').textContent = (cur + adding).toLocaleString() + ' kWh';
+    });
+  }
+});
+
+function applyBalanceChange(newBal, msg) {
   const store = getTokenStore();
   if (!store[selectedSiteId]) store[selectedSiteId] = { balance: 0, lastUpdated: null, history: [] };
-  store[selectedSiteId].balance = val;
+  store[selectedSiteId].balance = newBal;
   saveTokenStore(store);
   const site = sitesData.find(function(s) { return s.id === selectedSiteId; });
-  if (site) site.balance = val;
+  if (site) site.balance = newBal;
   closeBalanceModal();
   updateSummary();
   renderCards();
   renderAlerts();
-  showToast('Balance updated to ' + val.toLocaleString() + ' kWh', 'ok');
+  showToast(msg, 'ok');
   selectSite(selectedSiteId);
+}
+
+function saveSetBalance() {
+  const val = parseInt(document.getElementById('balanceSetInput').value, 10);
+  if (isNaN(val) || val < 0) { showToast('Enter a valid balance', 'err'); return; }
+  applyBalanceChange(val, 'Balance set to ' + val.toLocaleString() + ' kWh');
+}
+
+function saveAddTokens() {
+  const site = sitesData.find(function(s) { return s.id === selectedSiteId; });
+  const cur = site ? site.balance : 0;
+  const adding = parseInt(document.getElementById('balanceAddInput').value, 10);
+  if (isNaN(adding) || adding <= 0) { showToast('Enter a positive amount to add', 'err'); return; }
+  const newBal = cur + adding;
+  applyBalanceChange(newBal, '+' + adding.toLocaleString() + ' kWh added → ' + newBal.toLocaleString() + ' kWh total');
 }
 
 function setGridLoading() {
