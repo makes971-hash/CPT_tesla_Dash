@@ -402,12 +402,13 @@
 
   <div class="main">
 
-    <!-- ALERTS SECTION -->
+    <!-- ALERTS SECTION (collapsible) -->
     <div class="alerts-section" id="alertsSection" style="display:none">
-      <div class="section-header">
-        <span class="section-title"><i class="ti ti-alert-triangle" style="color:var(--red);margin-right:6px"></i>Active Alerts</span>
+      <div class="section-header" onclick="toggleAlerts()" style="cursor:pointer;user-select:none">
+        <span class="section-title"><i class="ti ti-alert-triangle" style="color:var(--red);margin-right:6px"></i>Active Alerts <span id="alertsCount" style="font-size:11px;background:var(--red);color:#fff;padding:1px 7px;border-radius:20px;margin-left:6px;font-weight:600"></span></span>
+        <i class="ti ti-chevron-down" id="alertsChevron" style="color:var(--text3);font-size:16px;transition:transform 0.2s"></i>
       </div>
-      <div id="alertsList"></div>
+      <div id="alertsList" style="display:none"></div>
     </div>
 
     <!-- SITE CARDS -->
@@ -729,6 +730,9 @@ function renderAlerts() {
   if (!alerts.length && !warnings.length) { section.style.display = 'none'; return; }
   section.style.display = 'block';
 
+  const total = alerts.length + warnings.length;
+  document.getElementById('alertsCount').textContent = total;
+
   document.getElementById('alertsList').innerHTML = alerts.map(function(s) {
     return '<div class="alert-item"><i class="ti ti-alert-triangle alert-icon"></i>'
       + '<div class="alert-text"><strong>' + s.name + '</strong> — balance critically low: <strong>' + s.balance.toLocaleString() + ' kWh</strong> (threshold 1,100 kWh)</div>'
@@ -738,6 +742,14 @@ function renderAlerts() {
       + '<div class="alert-text"><strong>' + s.name + '</strong> — approaching threshold: <strong>' + s.balance.toLocaleString() + ' kWh</strong></div>'
       + '<span class="alert-time">' + (s.lastUpdated || '—') + '</span></div>';
   })).join('');
+}
+
+function toggleAlerts() {
+  const list = document.getElementById('alertsList');
+  const chevron = document.getElementById('alertsChevron');
+  const open = list.style.display !== 'none';
+  list.style.display = open ? 'none' : 'block';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 async function selectSite(siteId) {
