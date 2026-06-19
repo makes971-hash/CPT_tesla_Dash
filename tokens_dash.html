@@ -557,27 +557,58 @@ async function refreshAll() {
       if (liveData.connection_status === 'disconnected') isOnline = false;
       if (!site.gateway_id) isOnline = false;
 
-      // Today's grid draw
-      let todayUsage = 0;
+      // Today's grid draw - API returns Wh, convert to kWh
+      let todayUsageWh = 0;
+      let todayUsageKwh = 0;
       try {
         const hist = await apiGet('/api/1/energy_sites/' + siteId + '/calendar_history?kind=energy&period=day&start_date=' + today + '&end_date=' + today);
         const ts = (hist && hist.response && hist.response.time_series) ? hist.response.time_series : [];
         if (ts.length > 0) {
-          todayUsage = Math.round((ts[0].grid_energy_imported_from_grid_wh || 0) / 1000);
+          const row = ts[0];
+          // Tesla may use different field names - check all known variants
+          todayUsageWh = row.grid_energy_imported_from_grid_wh
+            || row.consumer_energy_imported_from_grid_wh
+            || row.total_grid_energy_exported_wh
+            || row.grid_energy_imported_wh
+            || 0;
+          todayUsageKwh = Math.round(todayUsageWh / 1000);
+          console.log('[CPT Tokens] Site ' + siteId + ' grid today: ' + todayUsageWh + ' Wh = ' + todayUsageKwh + ' kWh | fields:', Object.keys(row));
         }
-      } catch(e) {}
+      } catch(e) {
+        console.warn('[CPT Tokens] calendar_history failed for ' + siteId, e);
+      }
 
-      // Token balance
-      if (!store[siteId]) store[siteId] = { balance: 0, lastUpdated: null, history: [] };
+      // Token balance - subtract today's kWh from stored balance
+      // We store lastUpdatedWh to re-subtract if the value changes during the day
+      if (!store[siteId]) store[siteId] = { balance: 0, lastUpdated: null, lastUpdatedWh: 0, history: [] };
       const entry = store[siteId];
 
-      if (todayUsage > 0 && entry.lastUpdated !== today) {
-        entry.balance = Math.max(0, (entry.balance || 0) - todayUsage);
-        entry.lastUpdated = today;
-        const h = entry.history || [];
-        h.push({ date: today, used: todayUsage });
-        entry.history = h.slice(-30);
-        store[siteId] = entry;
+      if (todayUsageKwh > 0) {
+        if (entry.lastUpdated !== today) {
+          // New day - subtract fresh
+          entry.balance = Math.max(0, (entry.balance || 0) - todayUsageKwh);
+          entry.lastUpdated = today;
+          entry.lastUpdatedWh = todayUsageWh;
+          const h = entry.history || [];
+          h.push({ date: today, used: todayUsageKwh });
+          entry.history = h.slice(-30);
+          store[siteId] = entry;
+        } else if (todayUsageWh > (entry.lastUpdatedWh || 0)) {
+          // Same day but usage has increased - subtract the difference
+          const prevKwh = Math.round((entry.lastUpdatedWh || 0) / 1000);
+          const diffKwh = todayUsageKwh - prevKwh;
+          if (diffKwh > 0) {
+            entry.balance = Math.max(0, (entry.balance || 0) - diffKwh);
+            entry.lastUpdatedWh = todayUsageWh;
+            // Update today's history entry
+            const h = entry.history || [];
+            if (h.length > 0 && h[h.length - 1].date === today) {
+              h[h.length - 1].used = todayUsageKwh;
+            }
+            entry.history = h;
+            store[siteId] = entry;
+          }
+        }
       }
 
       return {
@@ -586,7 +617,8 @@ async function refreshAll() {
         gateway: site.gateway_id || null,
         isOnline: isOnline,
         balance: entry.balance || 0,
-        todayUsage: todayUsage,
+        todayUsage: todayUsageKwh,
+        todayUsageWh: todayUsageWh,
         history: (entry.history || []).slice(-7),
         lastUpdated: entry.lastUpdated,
         backup_percent: (liveData.backup_reserve_percent !== undefined) ? liveData.backup_reserve_percent : null,
@@ -676,7 +708,7 @@ function renderCards() {
       + '</div>'
       + '<div class="progress-bar"><div class="progress-fill ' + fillClass + '" style="width:' + pct + '%"></div></div>'
       + '<div class="card-stats">'
-      +   '<div class="stat-item"><span class="stat-label">Today\'s draw</span><span class="stat-value">' + (s.todayUsage ? s.todayUsage.toLocaleString() + ' kWh' : '—') + '</span></div>'
+      +   '<div class="stat-item"><span class="stat-label">Today\'s draw</span><span class="stat-value">' + (s.todayUsage ? s.todayUsage.toLocaleString() + ' kWh' : '—') + (s.todayUsageWh ? '<span style="font-size:10px;color:var(--text3);display:block">' + s.todayUsageWh.toLocaleString() + ' Wh raw</span>' : '') + '</span></div>'
       +   '<div class="stat-item"><span class="stat-label">Days remaining</span><span class="stat-value ' + (isAlert ? 'c-red' : '') + '">' + (daysLeft !== null ? daysLeft + 'd' : '—') + '</span></div>'
       +   '<div class="stat-item"><span class="stat-label">Battery reserve</span><span class="stat-value">' + (s.backup_percent !== null ? s.backup_percent + '%' : '—') + '</span></div>'
       +   '<div class="stat-item"><span class="stat-label">Last updated</span><span class="stat-value">' + (s.lastUpdated || '—') + '</span></div>'
