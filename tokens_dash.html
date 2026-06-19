@@ -557,19 +557,27 @@ async function refreshAll() {
       if (liveData.connection_status === 'disconnected') isOnline = false;
       if (!site.gateway_id) isOnline = false;
 
-      // Today's grid draw - matches main dash exactly
+      // Today's grid draw - use kind=power (kind=energy returns empty for these sites)
+      // Sum positive grid_power values across all intervals to get total grid import
       let todayUsageWh = 0;
       let todayUsageKwh = 0;
       try {
-        const hist = await apiGet('/api/1/energy_sites/' + siteId + '/calendar_history?kind=energy&period=day');
+        const hist = await apiGet('/api/1/energy_sites/' + siteId + '/calendar_history?kind=power&period=day');
         const ts = (hist && hist.response && hist.response.time_series) ? hist.response.time_series : [];
         if (ts.length > 0) {
-          // Sum all intervals - Tesla returns Wh in grid_energy_imported
+          // Calculate interval hours (typically 5-minute = 0.0833h)
+          const intervalHours = ts.length > 1
+            ? (new Date(ts[1].timestamp) - new Date(ts[0].timestamp)) / 3600000
+            : 0.0833;
+          // Sum only positive grid_power (import from grid, not export)
+          let totalGridKwh = 0;
           ts.forEach(function(entry) {
-            todayUsageWh += (entry.grid_energy_imported || 0);
+            const gridKw = (entry.grid_power || 0) / 1000;
+            if (gridKw > 0) totalGridKwh += gridKw * intervalHours;
           });
-          todayUsageKwh = Math.round((todayUsageWh / 1000) * 10) / 10;
-          console.log('[CPT Tokens] Site ' + siteId + ' grid: ' + todayUsageWh + ' Wh = ' + todayUsageKwh + ' kWh | rows:', ts.length, '| sample fields:', Object.keys(ts[0]));
+          todayUsageKwh = Math.round(totalGridKwh * 10) / 10;
+          todayUsageWh = Math.round(totalGridKwh * 1000);
+          console.log('[CPT Tokens] Site ' + siteId + ' grid import: ' + todayUsageKwh + ' kWh (' + ts.length + ' intervals, ' + intervalHours.toFixed(4) + 'h each)');
         }
       } catch(e) {
         console.warn('[CPT Tokens] calendar_history failed for ' + siteId, e);
@@ -761,10 +769,20 @@ async function selectSite(siteId) {
       const now = new Date();
       const end = now.toISOString().split('T')[0];
       const start = new Date(now - 7 * 86400000).toISOString().split('T')[0];
-      const data = await apiGet('/api/1/energy_sites/' + siteId + '/calendar_history?kind=energy&period=day');
+      const data = await apiGet('/api/1/energy_sites/' + siteId + '/calendar_history?kind=power&period=week');
       const ts = (data && data.response && data.response.time_series) ? data.response.time_series : [];
-      hist = ts.map(function(d) {
-        return { date: d.timestamp ? d.timestamp.split('T')[0] : '—', used: Math.round((d.grid_energy_imported || 0) / 1000 * 10) / 10 };
+      // Group by day and sum positive grid_power
+      const byDay = {};
+      const intervalHours = ts.length > 1 ? (new Date(ts[1].timestamp) - new Date(ts[0].timestamp)) / 3600000 : 0.0833;
+      ts.forEach(function(entry) {
+        const day = entry.timestamp ? entry.timestamp.split('T')[0] : null;
+        if (!day) return;
+        if (!byDay[day]) byDay[day] = 0;
+        const gridKw = (entry.grid_power || 0) / 1000;
+        if (gridKw > 0) byDay[day] += gridKw * intervalHours;
+      });
+      hist = Object.keys(byDay).sort().map(function(day) {
+        return { date: day, used: Math.round(byDay[day] * 10) / 10 };
       });
     } catch(e) {}
   }
