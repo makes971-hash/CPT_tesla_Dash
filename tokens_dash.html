@@ -553,15 +553,20 @@ async function refreshAll() {
         liveData = live.response || {};
       } catch(e) {}
 
-      // Determine online status using site_info connection_status
-      let isOnline = !!site.gateway_id; // fallback
+      // Determine online status from live_status
+      // If call fails or returns no meaningful data, site is offline
+      let isOnline = false;
       try {
-        const info = await apiGet('/api/1/energy_sites/' + siteId + '/site_info');
-        const conn = (info.response || {}).connection_status || '';
-        isOnline = conn.toLowerCase() === 'connected';
+        const liveResp = await apiGet('/api/1/energy_sites/' + siteId + '/live_status');
+        liveData = liveResp.response || {};
+        // Site is online if we get a valid response with actual power data
+        isOnline = !!(liveData && (
+          liveData.solar_power !== undefined ||
+          liveData.battery_power !== undefined ||
+          liveData.load_power !== undefined
+        ));
       } catch(e) {
-        // fall back to gateway_id check
-        isOnline = !!site.gateway_id;
+        isOnline = false;
       }
 
       // Today's grid draw - use kind=power (kind=energy returns empty for these sites)
