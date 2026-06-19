@@ -553,10 +553,16 @@ async function refreshAll() {
         liveData = live.response || {};
       } catch(e) {}
 
-      // Determine online status
-      let isOnline = true;
-      if (liveData.connection_status === 'disconnected') isOnline = false;
-      if (!site.gateway_id) isOnline = false;
+      // Determine online status using site_info connection_status
+      let isOnline = !!site.gateway_id; // fallback
+      try {
+        const info = await apiGet('/api/1/energy_sites/' + siteId + '/site_info');
+        const conn = (info.response || {}).connection_status || '';
+        isOnline = conn.toLowerCase() === 'connected';
+      } catch(e) {
+        // fall back to gateway_id check
+        isOnline = !!site.gateway_id;
+      }
 
       // Today's grid draw - use kind=power (kind=energy returns empty for these sites)
       // Sum positive grid_power values across all intervals to get total grid import
