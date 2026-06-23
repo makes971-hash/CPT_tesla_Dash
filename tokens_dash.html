@@ -460,6 +460,7 @@
 const THRESHOLD = 1100;
 const STORAGE_KEY = 'cpt_tokens_v2';
 const AUTH_KEY = 'cpt_tokens_auth';
+const PROXY = 'https://cptdash.makes971.workers.dev';
 
 let cfg = {};
 let sitesData = [];
@@ -484,6 +485,16 @@ function saveAuth() {
 }
 
 function loadAuth() {
+  // Try shared session written by index.html first
+  const sharedTok  = localStorage.getItem('cpt_shared_tok');
+  const sharedRtok = localStorage.getItem('cpt_shared_rtok');
+  const sharedCid  = localStorage.getItem('cpt_shared_cid');
+  if (sharedTok) {
+    cfg = { proxy: PROXY, token: sharedTok, rtok: sharedRtok||'', cid: sharedCid||'', region:'na' };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(cfg));
+    return true;
+  }
+  // Fall back to manually saved credentials
   try {
     const s = localStorage.getItem(AUTH_KEY);
     if (s) {
@@ -497,6 +508,33 @@ function loadAuth() {
   } catch(e) {}
   return false;
 }
+
+async function silentRefreshToken() {
+  const rtok = cfg.rtok || localStorage.getItem('cpt_shared_rtok');
+  const cid  = cfg.cid  || localStorage.getItem('cpt_shared_cid');
+  if (!rtok || !cid) return false;
+  try {
+    const r = await fetch(PROXY + '/refresh', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({client_id: cid, refresh_token: rtok})
+    });
+    if (!r.ok) return false;
+    const d = await r.json();
+    if (d.access_token) {
+      cfg.token = d.access_token;
+      if (d.refresh_token) cfg.rtok = d.refresh_token;
+      localStorage.setItem('cpt_shared_tok', cfg.token);
+      if (d.refresh_token) localStorage.setItem('cpt_shared_rtok', d.refresh_token);
+      localStorage.setItem(AUTH_KEY, JSON.stringify(cfg));
+      return true;
+    }
+  } catch(_) {}
+  return false;
+}
+
+// Silent token refresh every 6 hours
+setInterval(async () => { if (await silentRefreshToken()) refreshAll(); }, 6*60*60*1000);
 
 function connect() {
   saveAuth();
@@ -515,6 +553,14 @@ async function apiGet(path) {
   const res = await fetch(url, {
     headers: { 'Authorization': 'Bearer ' + cfg.token }
   });
+  if (res.status === 401) {
+    const refreshed = await silentRefreshToken();
+    if (refreshed) {
+      // Retry once with new token
+      const res2 = await fetch(url, { headers: { 'Authorization': 'Bearer ' + cfg.token } });
+      if (res2.ok) return res2.json();
+    }
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error('API ' + res.status + (body ? ': ' + body.slice(0, 120) : ''));
@@ -931,11 +977,13 @@ function setGridError(msg) {
     '<div class="empty" style="grid-column:1/-1"><i class="ti ti-wifi-off"></i><div style="margin-bottom:8px">Could not load sites</div><div style="font-size:12px;color:var(--text3)">' + msg + '</div></div>';
 }
 
-window.addEventListener('DOMContentLoaded', function() {
+window.addEventListener('DOMContentLoaded', async function() {
   const hasAuth = loadAuth();
   if (hasAuth) {
     document.getElementById('authModal').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    // Refresh token silently before first data load
+    await silentRefreshToken();
     refreshAll();
   }
 });
