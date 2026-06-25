@@ -403,24 +403,75 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
         </div>
       </div>
     </div>
-    <div id="tab-analytics" style="display:none">
+        <div id="tab-analytics" style="display:none">
       <div class="analytics-controls">
-        <select class="site-select" id="an-site-select" onchange="loadSiteAnalytics()"><option value="">Select a site…</option></select>
+        <select class="site-select" id="an-site-select" onchange="loadSiteAnalytics()">
+          <option value="">-- All sites (fleet total) --</option>
+        </select>
         <div class="period-btns">
           <button class="period-btn active" onclick="setPeriod('day',this)">Today</button>
-          <button class="period-btn" onclick="setPeriod('week',this)">This week</button>
-          <button class="period-btn" onclick="setPeriod('month',this)">This month</button>
+          <button class="period-btn" onclick="setPeriod('week',this)">Week</button>
+          <button class="period-btn" onclick="setPeriod('month',this)">Month</button>
+          <button class="period-btn" onclick="setPeriod('year',this)">Year</button>
+          <button class="period-btn" onclick="setPeriod('lifetime',this)">Lifetime</button>
+        </div>
+        <button class="btn" onclick="loadSiteAnalytics()" style="margin-left:8px;padding:5px 12px;font-size:12px">&#8635; Refresh</button>
+      </div>
+      <div id="an-loading" style="display:none" class="loading"><div class="spinner"></div><span>Loading analytics...</span></div>
+      <div id="an-content" style="display:none">
+        <div id="an-scope-banner" style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:8px 14px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)"></div>
+        <div class="savings-card">
+          <div class="savings-title" id="an-savings-title">Estimated savings</div>
+          <div class="savings-amount" id="an-savings-amount">R 0.00</div>
+          <div class="savings-detail" id="an-savings-detail">Cape Town tariff R3.50/kWh</div>
+          <div class="savings-grid">
+            <div class="savings-item"><div class="si-val" id="an-solar-kwh">0</div><div class="si-lbl">Solar kWh</div></div>
+            <div class="savings-item"><div class="si-val" id="an-grid-kwh">0</div><div class="si-lbl">Grid import kWh</div></div>
+            <div class="savings-item"><div class="si-val" id="an-total-kwh">0</div><div class="si-lbl">Home consumed kWh</div></div>
+          </div>
+        </div>
+        <div class="analytics-grid" id="an-kpis"></div>
+        <div class="an-chart-card">
+          <h4>&#9889; Energy source breakdown</h4>
+          <div class="source-bar" id="an-source-bar"></div>
+          <div class="source-legend">
+            <div class="source-leg"><div class="source-dot" style="background:#f59e0b"></div>Solar</div>
+            <div class="source-leg"><div class="source-dot" style="background:#3b82f6"></div>Grid import</div>
+            <div class="source-leg"><div class="source-dot" style="background:#10b981"></div>Battery discharge</div>
+          </div>
+        </div>
+        <div class="an-chart-row">
+          <div class="an-chart-card"><h4>&#9728;&#65039; Solar generation</h4><canvas id="an-chart-solar" style="width:100%;height:200px"></canvas></div>
+          <div class="an-chart-card"><h4>&#9889; Grid import / export</h4><canvas id="an-chart-grid" style="width:100%;height:200px"></canvas></div>
+        </div>
+        <div class="an-chart-row">
+          <div class="an-chart-card"><h4>&#128267; Battery (charge / discharge)</h4><canvas id="an-chart-battery" style="width:100%;height:200px"></canvas></div>
+          <div class="an-chart-card"><h4>&#127968; Home consumption</h4><canvas id="an-chart-home" style="width:100%;height:200px"></canvas></div>
+        </div>
+        <div class="an-chart-card" id="an-events-card">
+          <h4>&#128268; Grid events</h4>
+          <div class="events-list" id="an-events"></div>
+        </div>
+        <div id="an-fleet-table-wrap" style="display:none">
+          <div class="an-chart-card">
+            <h4>&#128202; Per-site breakdown</h4>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead><tr style="border-bottom:2px solid var(--border);background:var(--bg)">
+                  <th style="text-align:left;padding:8px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Site</th>
+                  <th style="text-align:right;padding:8px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Solar kWh</th>
+                  <th style="text-align:right;padding:8px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Grid import kWh</th>
+                  <th style="text-align:right;padding:8px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Home kWh</th>
+                  <th style="text-align:right;padding:8px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Savings (R)</th>
+                  <th style="text-align:right;padding:8px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Solar %</th>
+                </tr></thead>
+                <tbody id="an-fleet-tbody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
-      <div id="an-content" style="display:none">
-        <div class="savings-card"><div class="savings-title">&#128176; Estimated savings today</div><div class="savings-amount" id="an-savings-amount">R 0.00</div><div class="savings-detail" id="an-savings-detail">Based on Cape Town Home User tariff R3.50/kWh avg</div><div class="savings-grid"><div class="savings-item"><div class="si-val" id="an-solar-kwh">0</div><div class="si-lbl">Solar kWh</div></div><div class="savings-item"><div class="si-val" id="an-grid-kwh">0</div><div class="si-lbl">Grid kWh</div></div><div class="savings-item"><div class="si-val" id="an-total-kwh">0</div><div class="si-lbl">Total kWh</div></div></div></div>
-        <div class="analytics-grid" id="an-kpis"></div>
-        <div class="an-chart-card"><h4>&#9889; Energy source breakdown</h4><div class="source-bar" id="an-source-bar"></div><div class="source-legend"><div class="source-leg"><div class="source-dot" style="background:#f59e0b"></div>Solar</div><div class="source-leg"><div class="source-dot" style="background:#3b82f6"></div>Grid import</div><div class="source-leg"><div class="source-dot" style="background:#10b981"></div>Battery</div></div></div>
-        <div class="an-chart-row"><div class="an-chart-card"><h4>&#9728;&#65039; Solar vs consumption</h4><canvas id="an-chart-solar" style="width:100%;height:180px"></canvas></div><div class="an-chart-card"><h4>&#9889; Grid import / export</h4><canvas id="an-chart-grid" style="width:100%;height:180px"></canvas></div></div>
-        <div class="an-chart-row"><div class="an-chart-card"><h4>&#128267; Battery level</h4><canvas id="an-chart-battery" style="width:100%;height:180px"></canvas></div><div class="an-chart-card"><h4>&#128200; Power source mix</h4><canvas id="an-chart-mix" style="width:100%;height:180px"></canvas></div></div>
-        <div class="an-chart-card"><h4>&#128268; Grid events</h4><div class="events-list" id="an-events"></div></div>
-      </div>
-      <div id="an-empty" style="padding:40px;text-align:center;color:var(--muted);font-size:14px">Select a site above to view analytics.</div>
+      <div id="an-empty" style="padding:40px;text-align:center;color:var(--muted);font-size:14px">Select a site or choose All Sites (fleet total).</div>
     </div>
     <div id="tab-control" style="display:none">
       <div class="weather-widget" id="weather-widget">
@@ -877,11 +928,276 @@ function saveOC(sid){
 }
 
 let anPeriod='day',anCharts={};
-function populateAnalyticsSites(){const sel=document.getElementById('an-site-select');const cur=sel.value;sel.innerHTML='<option value="">Select a site…</option>';sites.forEach((s,i)=>sel.innerHTML+='<option value="'+s.energy_site_id+'">'+(s.site_name||'Site '+(i+1))+'</option>');if(cur)sel.value=cur;}
-function setPeriod(p,btn){anPeriod=p;document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');loadSiteAnalytics();}
-async function loadSiteAnalytics(){const sid=document.getElementById('an-site-select').value;if(!sid){document.getElementById('an-content').style.display='none';document.getElementById('an-empty').style.display='';return;}document.getElementById('an-content').style.display='';document.getElementById('an-empty').style.display='none';try{const h=await api('/energy_sites/'+sid+'/calendar_history?kind=power&period='+anPeriod);processAnalytics(h.response?.time_series||[],liveData[sid]||{},sites.find(s=>s.energy_site_id==sid));}catch(e){document.getElementById('an-kpis').innerHTML='<div class="err" style="display:block;grid-column:span 4">Failed: '+e.message+'</div>';}}
-function processAnalytics(series,live,site){if(!series.length){document.getElementById('an-kpis').innerHTML='<div style="grid-column:span 4;text-align:center;color:var(--muted);padding:20px">No data.</div>';return;}const ih=series.length>1?(new Date(series[1].timestamp)-new Date(series[0].timestamp))/3600000:0.0833;let tS=0,tGI=0,tGE=0,tL=0,mL=0,mS=0,evts=[],pGS='Active';series.forEach(d=>{const sk=(d.solar_power||0)/1000,gk=(d.grid_power||0)/1000,lk=(d.load_power||0)/1000;tS+=sk*ih;tL+=lk*ih;if(gk>0)tGI+=gk*ih;else tGE+=Math.abs(gk)*ih;if(lk>mL)mL=lk;if(sk>mS)mS=sk;const gs=d.grid_status||(gk===0&&lk>0?'Inactive':'Active');if(gs!==pGS)evts.push({time:new Date(d.timestamp),type:gs==='Inactive'||gs==='SystemIslandedActive'?'loss':'restore'});pGS=gs;});const sP=tL>0?tS/tL*100:0,gP=tL>0?tGI/tL*100:0,bP=Math.max(0,100-sP-gP);const bc=live.percentage_charged||0;const pL=anPeriod==='day'?'today':anPeriod==='week'?'this week':'this month';document.getElementById('an-savings-amount').textContent='R '+(tS*CPT_RATE).toFixed(2);document.getElementById('an-solar-kwh').textContent=tS.toFixed(1);document.getElementById('an-grid-kwh').textContent=tGI.toFixed(1);document.getElementById('an-total-kwh').textContent=tL.toFixed(1);document.getElementById('an-savings-detail').textContent='Cape Town tariff R'+CPT_RATE.toFixed(2)+'/kWh · '+pL;document.getElementById('an-kpis').innerHTML='<div class="an-card"><div class="an-label">Max load</div><div class="an-value hv">'+mL.toFixed(1)+' kW</div><div class="an-sub">Peak</div></div><div class="an-card"><div class="an-label">Max solar</div><div class="an-value sv">'+mS.toFixed(1)+' kW</div><div class="an-sub">Peak</div></div><div class="an-card"><div class="an-label">Grid depend.</div><div class="an-value gv">'+gP.toFixed(0)+'%</div><div class="an-sub">'+(gP<30?'Low':'gP<60?Moderate:High')+'</div></div><div class="an-card"><div class="an-label">Solar contrib.</div><div class="an-value sv">'+sP.toFixed(0)+'%</div><div class="an-sub">Of consumption</div></div><div class="an-card"><div class="an-label">Grid exported</div><div class="an-value" style="color:#059669">'+tGE.toFixed(1)+' kWh</div><div class="an-sub">Sold back</div></div><div class="an-card"><div class="an-label">Battery now</div><div class="an-value bv">'+bc.toFixed(0)+'%</div><div class="an-sub">'+(bc>60?'Healthy':bc>20?'Moderate':'Low!')+'</div></div>';document.getElementById('an-source-bar').innerHTML='<div class="source-segment" style="width:'+Math.max(sP,5)+'%;background:#f59e0b">'+sP.toFixed(0)+'%</div><div class="source-segment" style="width:'+Math.max(gP,5)+'%;background:#3b82f6">'+gP.toFixed(0)+'%</div><div class="source-segment" style="width:'+Math.max(bP,5)+'%;background:#10b981">'+bP.toFixed(0)+'%</div>';document.getElementById('an-events').innerHTML=evts.length===0?'<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">&#9989; No grid events.</div>':evts.map(e=>{const ts=e.time.toLocaleDateString('en-ZA',{day:'numeric',month:'short'})+' '+e.time.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});return '<div class="event-item"><span class="event-time">'+ts+'</span><span class="event-desc">'+(e.type==='loss'?'Grid lost':'Grid restored')+'</span><span class="event-badge '+(e.type==='loss'?'eb-loss':'eb-restore')+'">'+(e.type==='loss'?'Loss':'Restored')+'</span></div>';}).join('');renderAnalyticsCharts(series);}
-function renderAnalyticsCharts(series){const labels=series.map(d=>{const t=new Date(d.timestamp);return t.getHours()+':'+String(t.getMinutes()).padStart(2,'0')});const kw=k=>series.map(d=>((d[k]||0)/1000).toFixed(2));const opts=y=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},usePointStyle:true,boxWidth:6}}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:10}},grid:{color:'#e2e8f0'}},y:{ticks:{font:{size:10},callback:v=>v+' '+y},grid:{color:'#e2e8f0'}}}});Object.values(anCharts).forEach(c=>c.destroy());anCharts.solar=new Chart(document.getElementById('an-chart-solar').getContext('2d'),{type:'line',data:{labels,datasets:[{label:'Solar',data:kw('solar_power'),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',fill:true,tension:.4,borderWidth:2,pointRadius:0},{label:'Home',data:kw('load_power'),borderColor:'#8b5cf6',tension:.4,borderWidth:2,pointRadius:0}]},options:opts('kW')});anCharts.grid=new Chart(document.getElementById('an-chart-grid').getContext('2d'),{type:'line',data:{labels,datasets:[{label:'Grid',data:kw('grid_power'),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',fill:true,tension:.4,borderWidth:2,pointRadius:0}]},options:opts('kW')});anCharts.battery=new Chart(document.getElementById('an-chart-battery').getContext('2d'),{type:'line',data:{labels,datasets:[{label:'Battery',data:series.map(d=>((d.battery_power||0)/1000).toFixed(2)),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.1)',fill:true,tension:.4,borderWidth:2,pointRadius:0}]},options:opts('kW')});anCharts.mix=new Chart(document.getElementById('an-chart-mix').getContext('2d'),{type:'line',data:{labels,datasets:[{label:'Solar',data:kw('solar_power'),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.3)',fill:true,tension:.4,borderWidth:1.5,pointRadius:0},{label:'Grid',data:series.map(d=>Math.max(0,(d.grid_power||0)/1000).toFixed(2)),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.3)',fill:true,tension:.4,borderWidth:1.5,pointRadius:0}]},options:opts('kW')});}
+
+function populateAnalyticsSites(){
+  const sel=document.getElementById('an-site-select');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- All sites (fleet total) --</option>';
+  sites.forEach((s,i)=>sel.innerHTML+='<option value="'+s.energy_site_id+'">'+(s.site_name||'Site '+(i+1))+'</option>');
+  if(cur) sel.value=cur;
+}
+
+function setPeriod(p,btn){
+  anPeriod=p;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadSiteAnalytics();
+}
+
+// Map period to Tesla API kind + period params
+function getApiParams(period){
+  switch(period){
+    case 'day':      return {kind:'power',  period:'day'};
+    case 'week':     return {kind:'energy', period:'week'};
+    case 'month':    return {kind:'energy', period:'month'};
+    case 'year':     return {kind:'energy', period:'year'};
+    case 'lifetime': return {kind:'energy', period:'lifetime'};
+    default:         return {kind:'power',  period:'day'};
+  }
+}
+
+function getChartLabel(period, entry){
+  const t=new Date(entry.timestamp);
+  switch(period){
+    case 'day':      return t.getHours()+':'+String(t.getMinutes()).padStart(2,'0');
+    case 'week':     return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][t.getDay()]+' '+t.getDate();
+    case 'month':    return t.getDate()+'/'+String(t.getMonth()+1).padStart(2,'0');
+    case 'year':     return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][t.getMonth()];
+    case 'lifetime': return t.getFullYear();
+    default:         return t.toLocaleDateString();
+  }
+}
+
+function getPeriodLabel(period){
+  return {day:'Today',week:'This week',month:'This month',year:'This year',lifetime:'All time'}[period]||period;
+}
+
+async function loadSiteAnalytics(){
+  const sid=document.getElementById('an-site-select').value;
+  const isFleet=!sid;
+  document.getElementById('an-content').style.display='none';
+  document.getElementById('an-empty').style.display='none';
+  document.getElementById('an-loading').style.display='flex';
+
+  const {kind,period}=getApiParams(anPeriod);
+
+  try {
+    if(isFleet){
+      await loadFleetAnalytics(kind,period);
+    } else {
+      await loadSingleSiteAnalytics(sid,kind,period);
+    }
+    document.getElementById('an-loading').style.display='none';
+    document.getElementById('an-content').style.display='';
+  } catch(e){
+    document.getElementById('an-loading').style.display='none';
+    document.getElementById('an-empty').style.display='';
+    document.getElementById('an-empty').textContent='Failed to load analytics: '+e.message;
+  }
+}
+
+async function loadSingleSiteAnalytics(sid,kind,period){
+  const h=await api('/energy_sites/'+sid+'/calendar_history?kind='+kind+'&period='+period);
+  const series=h.response?.time_series||[];
+  const live=liveData[sid]||{};
+  const site=sites.find(s=>String(s.energy_site_id)===String(sid));
+  const name=site?site.site_name:'Site';
+  document.getElementById('an-scope-banner').innerHTML='&#128207; Showing <strong>'+name+'</strong> &mdash; '+getPeriodLabel(anPeriod);
+  document.getElementById('an-fleet-table-wrap').style.display='none';
+  document.getElementById('an-events-card').style.display='';
+  processAnalytics(series,live,kind);
+}
+
+async function loadFleetAnalytics(kind,period){
+  document.getElementById('an-scope-banner').innerHTML='&#127757; Showing <strong>all '+sites.length+' sites combined</strong> &mdash; '+getPeriodLabel(anPeriod);
+  document.getElementById('an-fleet-table-wrap').style.display='';
+  document.getElementById('an-events-card').style.display='none';
+
+  // Fetch all sites in parallel
+  const results=await Promise.all(sites.map(async s=>{
+    try {
+      const h=await api('/energy_sites/'+s.energy_site_id+'/calendar_history?kind='+kind+'&period='+period);
+      return {site:s, series:h.response?.time_series||[]};
+    } catch(_){ return {site:s, series:[]}; }
+  }));
+
+  // Merge series by timestamp label
+  const merged={};
+  results.forEach(({site,series})=>{
+    series.forEach(entry=>{
+      const label=getChartLabel(anPeriod,entry);
+      if(!merged[label]) merged[label]={solar:0,gridImport:0,gridExport:0,home:0,battCharge:0,battDischarge:0};
+      if(kind==='power'){
+        merged[label].solar+=(entry.solar_power||0)/1000;
+        merged[label].gridImport+=Math.max(0,(entry.grid_power||0)/1000);
+        merged[label].gridExport+=Math.max(0,-(entry.grid_power||0)/1000);
+        merged[label].home+=(entry.load_power||0)/1000;
+        merged[label].battCharge+=Math.max(0,(entry.battery_power||0)/1000);
+        merged[label].battDischarge+=Math.max(0,-(entry.battery_power||0)/1000);
+      } else {
+        merged[label].solar+=(entry.solar_energy_exported||0)/1000;
+        merged[label].gridImport+=(entry.grid_energy_imported||0)/1000;
+        merged[label].gridExport+=(entry.grid_energy_exported_from_solar||0)/1000;
+        merged[label].home+=(entry.consumer_energy_imported_from_grid||0)/1000+(entry.consumer_energy_imported_from_solar||0)/1000+(entry.consumer_energy_imported_from_battery||0)/1000;
+        merged[label].battCharge+=(entry.battery_energy_imported_from_solar||0)/1000+(entry.battery_energy_imported_from_grid||0)/1000;
+        merged[label].battDischarge+=(entry.battery_energy_exported||0)/1000;
+      }
+    });
+  });
+
+  const labels=Object.keys(merged);
+  const vals=Object.values(merged);
+  const totSolar=vals.reduce((a,v)=>a+v.solar,0);
+  const totGI=vals.reduce((a,v)=>a+v.gridImport,0);
+  const totGE=vals.reduce((a,v)=>a+v.gridExport,0);
+  const totHome=vals.reduce((a,v)=>a+v.home,0);
+  const totBattD=vals.reduce((a,v)=>a+v.battDischarge,0);
+
+  renderKPIs(totSolar,totGI,totGE,totHome,totBattD,{},anPeriod);
+  renderCharts(labels,vals,kind);
+
+  // Per-site table
+  const tbody=document.getElementById('an-fleet-tbody');
+  const rowData=results.map(({site,series})=>{
+    let sol=0,gi=0,home=0;
+    series.forEach(e=>{
+      if(kind==='power'){
+        sol+=(e.solar_power||0)/1000*(5/60);
+        gi+=Math.max(0,(e.grid_power||0)/1000)*(5/60);
+        home+=(e.load_power||0)/1000*(5/60);
+      } else {
+        sol+=(e.solar_energy_exported||0)/1000;
+        gi+=(e.grid_energy_imported||0)/1000;
+        home+=((e.consumer_energy_imported_from_grid||0)+(e.consumer_energy_imported_from_solar||0)+(e.consumer_energy_imported_from_battery||0))/1000;
+      }
+    });
+    return {name:site.site_name||String(site.energy_site_id),sol,gi,home,savings:sol*CPT_RATE,solarPct:home>0?sol/home*100:0};
+  }).sort((a,b)=>b.sol-a.sol);
+
+  tbody.innerHTML=rowData.map((r,i)=>'<tr style="border-bottom:1px solid #f5f5f5;'+(i%2===0?'':'background:#fafafa')+'">'+
+    '<td style="padding:8px 14px;font-weight:500">'+r.name+'</td>'+
+    '<td style="padding:8px 14px;text-align:right;color:#f59e0b">'+r.sol.toFixed(1)+'</td>'+
+    '<td style="padding:8px 14px;text-align:right;color:#3b82f6">'+r.gi.toFixed(1)+'</td>'+
+    '<td style="padding:8px 14px;text-align:right;color:#8b5cf6">'+r.home.toFixed(1)+'</td>'+
+    '<td style="padding:8px 14px;text-align:right;color:#059669;font-weight:600">R '+r.savings.toFixed(2)+'</td>'+
+    '<td style="padding:8px 14px;text-align:right">'+r.solarPct.toFixed(0)+'%</td>'+
+  '</tr>').join('');
+}
+
+function processAnalytics(series,live,kind){
+  if(!series.length){
+    document.getElementById('an-kpis').innerHTML='<div style="grid-column:span 6;text-align:center;color:var(--muted);padding:20px">No data available for this period.</div>';
+    return;
+  }
+  const labels=series.map(e=>getChartLabel(anPeriod,e));
+  let totSolar=0,totGI=0,totGE=0,totHome=0,totBattD=0,mxLoad=0,mxSolar=0;
+  const vals=series.map(e=>{
+    let sol,gi,ge,home,bc,bd;
+    if(kind==='power'){
+      sol=(e.solar_power||0)/1000;
+      gi=Math.max(0,(e.grid_power||0)/1000);
+      ge=Math.max(0,-(e.grid_power||0)/1000);
+      home=(e.load_power||0)/1000;
+      bc=Math.max(0,(e.battery_power||0)/1000);
+      bd=Math.max(0,-(e.battery_power||0)/1000);
+      const ih=series.length>1?(new Date(series[1].timestamp)-new Date(series[0].timestamp))/3600000:0.0833;
+      totSolar+=sol*ih; totGI+=gi*ih; totGE+=ge*ih; totHome+=home*ih; totBattD+=bd*ih;
+    } else {
+      sol=(e.solar_energy_exported||0)/1000;
+      gi=(e.grid_energy_imported||0)/1000;
+      ge=(e.grid_energy_exported_from_solar||0)/1000;
+      home=((e.consumer_energy_imported_from_grid||0)+(e.consumer_energy_imported_from_solar||0)+(e.consumer_energy_imported_from_battery||0))/1000;
+      bc=((e.battery_energy_imported_from_solar||0)+(e.battery_energy_imported_from_grid||0))/1000;
+      bd=(e.battery_energy_exported||0)/1000;
+      totSolar+=sol; totGI+=gi; totGE+=ge; totHome+=home; totBattD+=bd;
+    }
+    if(home>mxLoad) mxLoad=home;
+    if(sol>mxSolar) mxSolar=sol;
+    return {sol,gi,ge,home,bc,bd};
+  });
+
+  // Grid events (day only)
+  if(anPeriod==='day'&&kind==='power'){
+    let prev='Active',evts=[];
+    series.forEach(e=>{
+      const gs=e.grid_status||(e.grid_power===0&&e.load_power>0?'Inactive':'Active');
+      if(gs!==prev) evts.push({time:new Date(e.timestamp),type:gs==='Inactive'?'loss':'restore'});
+      prev=gs;
+    });
+    document.getElementById('an-events').innerHTML=evts.length===0
+      ?'<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">&#9989; No grid events detected.</div>'
+      :evts.map(ev=>{const ts=ev.time.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});return '<div class="event-item"><span class="event-time">'+ts+'</span><span class="event-desc">'+(ev.type==='loss'?'Grid lost':'Grid restored')+'</span><span class="event-badge '+(ev.type==='loss'?'eb-loss':'eb-restore')+'">'+(ev.type==='loss'?'Loss':'Restored')+'</span></div>';}).join('');
+    document.getElementById('an-events-card').style.display='';
+  } else {
+    document.getElementById('an-events-card').style.display='none';
+  }
+
+  renderKPIs(totSolar,totGI,totGE,totHome,totBattD,live,anPeriod);
+  renderCharts(labels,vals,kind);
+}
+
+function renderKPIs(totSolar,totGI,totGE,totHome,totBattD,live,period){
+  const solarPct=totHome>0?totSolar/totHome*100:0;
+  const gridPct=totHome>0?totGI/totHome*100:0;
+  const battPct=Math.max(0,100-solarPct-gridPct);
+  const savings=totSolar*CPT_RATE;
+  const pLabel=getPeriodLabel(period);
+
+  document.getElementById('an-savings-title').textContent='Estimated savings \u2014 '+pLabel;
+  document.getElementById('an-savings-amount').textContent='R '+savings.toFixed(2);
+  document.getElementById('an-savings-detail').textContent='Solar saved vs grid at R'+CPT_RATE.toFixed(2)+'/kWh \u00b7 '+pLabel;
+  document.getElementById('an-solar-kwh').textContent=totSolar.toFixed(1);
+  document.getElementById('an-grid-kwh').textContent=totGI.toFixed(1);
+  document.getElementById('an-total-kwh').textContent=totHome.toFixed(1);
+
+  const bc=live.percentage_charged;
+  document.getElementById('an-kpis').innerHTML=
+    '<div class="an-card"><div class="an-label">Solar generated</div><div class="an-value sv">'+totSolar.toFixed(1)+' kWh</div><div class="an-sub">'+pLabel+'</div></div>'+
+    '<div class="an-card"><div class="an-label">Grid imported</div><div class="an-value gv">'+totGI.toFixed(1)+' kWh</div><div class="an-sub">From utility grid</div></div>'+
+    '<div class="an-card"><div class="an-label">Grid exported</div><div class="an-value" style="color:#059669">'+totGE.toFixed(1)+' kWh</div><div class="an-sub">Sold back</div></div>'+
+    '<div class="an-card"><div class="an-label">Home consumed</div><div class="an-value hv">'+totHome.toFixed(1)+' kWh</div><div class="an-sub">Total load</div></div>'+
+    '<div class="an-card"><div class="an-label">Solar self-use</div><div class="an-value sv">'+solarPct.toFixed(0)+'%</div><div class="an-sub">'+(solarPct>70?'Excellent':'solarPct>40?Good:Low')+'</div></div>'+
+    '<div class="an-card"><div class="an-label">Grid dependence</div><div class="an-value gv">'+gridPct.toFixed(0)+'%</div><div class="an-sub">'+(gridPct<30?'Low \u2014 great!':gridPct<60?'Moderate':'High')+'</div></div>'+
+    (bc!==undefined?'<div class="an-card"><div class="an-label">Battery now</div><div class="an-value bv">'+bc.toFixed(0)+'%</div><div class="an-sub">'+(bc>60?'Healthy':bc>30?'Moderate':'Low!')+'</div></div>':'');
+
+  document.getElementById('an-source-bar').innerHTML=
+    '<div class="source-segment" style="width:'+Math.max(solarPct,3)+'%;background:#f59e0b">'+solarPct.toFixed(0)+'%</div>'+
+    '<div class="source-segment" style="width:'+Math.max(gridPct,3)+'%;background:#3b82f6">'+gridPct.toFixed(0)+'%</div>'+
+    '<div class="source-segment" style="width:'+Math.max(battPct,3)+'%;background:#10b981">'+battPct.toFixed(0)+'%</div>';
+}
+
+function renderCharts(labels,vals,kind){
+  Object.values(anCharts).forEach(c=>{try{c.destroy();}catch(_){}});
+  anCharts={};
+  const unit=kind==='power'?'kW':'kWh';
+  const opts=u=>({responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{size:11},usePointStyle:true,boxWidth:6}}},
+    scales:{x:{ticks:{maxTicksLimit:12,font:{size:10}},grid:{color:'#e2e8f0'}},
+            y:{ticks:{font:{size:10},callback:v=>v+' '+u},grid:{color:'#e2e8f0'}}}});
+  const type=kind==='power'?'line':'bar';
+  const tension=kind==='power'?0.4:0;
+
+  anCharts.solar=new Chart(document.getElementById('an-chart-solar').getContext('2d'),{type,
+    data:{labels,datasets:[{label:'Solar',data:vals.map(v=>v.sol.toFixed(2)),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.25)',fill:true,tension,borderWidth:2,pointRadius:0}]},
+    options:opts(unit)});
+
+  anCharts.grid=new Chart(document.getElementById('an-chart-grid').getContext('2d'),{type,
+    data:{labels,datasets:[
+      {label:'Import',data:vals.map(v=>v.gi.toFixed(2)),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.2)',fill:true,tension,borderWidth:2,pointRadius:0},
+      {label:'Export',data:vals.map(v=>v.ge.toFixed(2)),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.2)',fill:true,tension,borderWidth:2,pointRadius:0}]},
+    options:opts(unit)});
+
+  anCharts.battery=new Chart(document.getElementById('an-chart-battery').getContext('2d'),{type,
+    data:{labels,datasets:[
+      {label:'Charge',data:vals.map(v=>v.bc.toFixed(2)),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.2)',fill:true,tension,borderWidth:2,pointRadius:0},
+      {label:'Discharge',data:vals.map(v=>v.bd.toFixed(2)),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.2)',fill:true,tension,borderWidth:2,pointRadius:0}]},
+    options:opts(unit)});
+
+  anCharts.home=new Chart(document.getElementById('an-chart-home').getContext('2d'),{type,
+    data:{labels,datasets:[{label:'Home',data:vals.map(v=>v.home.toFixed(2)),borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,.2)',fill:true,tension,borderWidth:2,pointRadius:0}]},
+    options:opts(unit)});
+}
+
 async function fetchWeather(){try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=-33.9249&longitude=18.4241&current=temperature_2m,weather_code,cloud_cover,uv_index,precipitation&daily=uv_index_max,precipitation_sum,cloud_cover_mean&timezone=Africa%2FJohannesburg&forecast_days=1');const d=await r.json();const c=d.current,dl=d.daily;document.getElementById('w-temp').textContent=Math.round(c.temperature_2m)+'°C';document.getElementById('w-cloud').textContent=c.cloud_cover+'%';document.getElementById('w-uv').textContent=c.uv_index.toFixed(1);document.getElementById('w-rain').textContent=c.precipitation+' mm';const ic={0:'&#9728;&#65039;',1:'&#127780;&#65039;',2:'&#127780;&#65039;',3:'&#9729;&#65039;'};document.getElementById('w-icon').innerHTML=c.weather_code<=3?ic[c.weather_code]:c.weather_code<=49?'&#127787;&#65039;':c.weather_code<=67?'&#127783;&#65039;':'&#9928;&#65039;';const dc={0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast'};document.getElementById('w-desc').textContent=(c.weather_code<=3?dc[c.weather_code]:c.weather_code<=49?'Foggy':c.weather_code<=67?'Rainy':'Stormy')+' · Cape Town';const uv=dl.uv_index_max[0],cl=dl.cloud_cover_mean[0],rn=dl.precipitation_sum[0];let rec,reason,color;if(rn>5){rec=100;reason='&#127783;&#65039; Rainy — keep battery full.';color='#ef4444';}else if(cl>70){rec=80;reason='&#9729;&#65039; Overcast — high reserve recommended.';color='#f59e0b';}else if(cl>40||uv<4){rec=60;reason='&#127780;&#65039; Partly cloudy — moderate solar.';color='#f59e0b';}else if(uv<7){rec=40;reason='&#127780;&#65039; Good solar day.';color='#10b981';}else if(uv<10){rec=20;reason='&#9728;&#65039; Excellent solar.';color='#10b981';}else{rec=10;reason='&#128262; Exceptional solar — minimal reserve.';color='#10b981';}weatherRecommendation=rec;const el=document.getElementById('w-rec-level');el.textContent=rec+'%';el.style.color=color;document.getElementById('w-rec-reason').innerHTML=reason;document.getElementById('w-apply-btn').disabled=false;}catch(e){document.getElementById('w-desc').textContent='Weather unavailable';}}
 let weatherRecommendation=null;
 function applyWeatherRecommendation(){if(weatherRecommendation===null)return;setReserve(weatherRecommendation);selectAllSites(true);document.getElementById('ctrl-result').innerHTML='<div class="ctrl-result-item ctrl-ok">&#9989; Reserve set to '+weatherRecommendation+'% — click Apply to confirm. Note: Silo/Altmore/Waterfront/Marina sites will be capped at 85% minimum.</div>';}
