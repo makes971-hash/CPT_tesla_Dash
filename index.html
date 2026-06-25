@@ -291,6 +291,277 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
 .chat-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.2);z-index:250;display:none}
 .chat-overlay.open{display:block}
 @media(max-width:600px){main{padding:12px}.fleet-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}.reserve-btns{gap:6px}.reserve-btn{padding:8px 14px;font-size:13px}.chat-panel{width:100%;right:-100%}}
+
+  
+#tab-tokens {
+  --tk-bg: #0d1117;
+  --tk-bg2: #161b22;
+  --tk-bg3: #1c2333;
+  --tk-border: rgba(255,255,255,0.08);
+  --tk-border2: rgba(255,255,255,0.14);
+  --tk-text: #e6edf3;
+  --tk-text2: #8b949e;
+  --tk-text3: #6e7681;
+  --tk-green: #3fb950;
+  --tk-green-dim: #1a3d22;
+  --tk-green-bg: #0f2318;
+  --tk-amber: #d29922;
+  --tk-amber-dim: #3d2d0a;
+  --tk-amber-bg: #241c06;
+  --tk-red: #f85149;
+  --tk-red-dim: #3d1014;
+  --tk-red-bg: #230a0b;
+  --tk-blue: #388bfd;
+  --tk-blue-dim: #0d2044;
+  --tk-teal: #1fbecf;
+  background: var(--tk-bg);
+  color: var(--tk-text);
+  min-height: 60vh;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  #tab-tokens-scope {
+    background: var(--tk-bg);
+    color: var(--tk-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* TOP BAR */
+  #tab-tokens .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: var(--tk-bg2);
+    border-bottom: 1px solid var(--tk-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  #tab-tokens #tab-tokens .topbar-left { display: flex; align-items: center; gap: 10px; }
+  #tab-tokens .logo-mark {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, #388bfd 0%, #1fbecf 100%);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: #fff;
+  }
+  #tab-tokens .topbar h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+  #tab-tokens .topbar h1 span { color: var(--tk-text2); font-weight: 400; }
+  #tab-tokens #tab-tokens .topbar-right { display: flex; align-items: center; gap: 10px; }
+  #tab-tokens .btn{
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 13px; cursor: pointer; border: 1px solid var(--tk-border2);
+    background: var(--tk-bg3); color: var(--tk-text); transition: background 0.15s;
+  }
+  #tab-tokens .btn:hover { background: rgba(255,255,255,0.06); }
+  #tab-tokens .btn.primary { background: var(--tk-blue); border-color: var(--tk-blue); color: #fff; }
+  #tab-tokens .btn.primary:hover { background: #3a8fee; }
+  #tab-tokens .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tk-text3); }
+  #tab-tokens .status-dot.live { background: var(--tk-green); box-shadow: 0 0 6px var(--tk-green); }
+  #last-refresh { font-size: 12px; color: var(--tk-text3); }
+
+  /* SUMMARY BAR */
+  #tab-tokens .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--tk-border);
+    border-bottom: 1px solid var(--tk-border);
+  }
+  #tab-tokens .summary-cell {
+    background: var(--tk-bg2);
+    padding: 14px 20px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  #tab-tokens .summary-cell .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--tk-text3); }
+  #tab-tokens .summary-cell .value { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  #tab-tokens .summary-cell .sub { font-size: 12px; color: var(--tk-text2); }
+  .c-green { color: var(--tk-green); }
+  .c-amber { color: var(--tk-amber); }
+  .c-red { color: var(--tk-red); }
+  .c-blue { color: var(--tk-blue); }
+  .c-teal { color: var(--tk-teal); }
+
+  /* MAIN LAYOUT */
+  #tab-tokens .main{ padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* SITE GRID */
+  #tab-tokens .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  #tab-tokens .section-title { font-size: 13px; font-weight: 600; color: var(--tk-text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  #tab-tokens .filter-row { display: flex; gap: 8px; }
+  #tab-tokens .filter-btn {
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--tk-border2); background: transparent; color: var(--tk-text2);
+    transition: all 0.15s;
+  }
+  #tab-tokens .filter-btn.active { background: var(--tk-blue); border-color: var(--tk-blue); color: #fff; }
+  #tab-tokens .filter-btn:hover:not(.active) { background: var(--tk-bg3); color: var(--tk-text); }
+
+  #tab-tokens .site-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  #tab-tokens .site-card {
+    background: var(--tk-bg2);
+    border: 1px solid var(--tk-border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+  #tab-tokens .site-card:hover { border-color: var(--tk-border2); }
+  #tab-tokens .site-card.alert { border-color: var(--tk-red-dim); }
+  #tab-tokens .site-card.warning { border-color: var(--tk-amber-dim); }
+  #tab-tokens .site-card.selected { border-color: var(--tk-blue); }
+
+  #tab-tokens .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .site-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .site-id { font-size: 11px; color: var(--tk-text3); margin-top: 2px; font-family: monospace; }
+  #tab-tokens .status-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500;
+    white-space: nowrap;
+  }
+  #tab-tokens .badge-online { background: var(--tk-green-bg); color: var(--tk-green); border: 1px solid var(--tk-green-dim); }
+  #tab-tokens .badge-offline { background: var(--tk-red-bg); color: var(--tk-red); border: 1px solid var(--tk-red-dim); }
+  #tab-tokens .badge-unknown { background: var(--tk-bg3); color: var(--tk-text3); border: 1px solid var(--tk-border); }
+
+  #tab-tokens .token-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+  #tab-tokens .token-value { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  #tab-tokens .token-unit { font-size: 13px; color: var(--tk-text2); }
+  #tab-tokens .token-threshold { font-size: 12px; color: var(--tk-text3); margin-left: auto; }
+
+  #tab-tokens .progress-bar {
+    height: 4px; background: var(--tk-bg3); border-radius: 2px; margin-bottom: 12px; overflow: hidden;
+  }
+  #tab-tokens .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+  #tab-tokens .fill-green { background: var(--tk-green); }
+  #tab-tokens .fill-amber { background: var(--tk-amber); }
+  #tab-tokens .fill-red { background: var(--tk-red); }
+
+  #tab-tokens .card-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    padding-top: 12px; border-top: 1px solid var(--tk-border);
+  }
+  .stat-item { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 11px; color: var(--tk-text3); }
+  .stat-value { font-size: 13px; font-weight: 500; }
+
+  /* DETAIL PANEL */
+  #tab-tokens .detail-panel {
+    background: var(--tk-bg2);
+    border: 1px solid var(--tk-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 28px;
+    display: none;
+  }
+  #tab-tokens .detail-panel.visible { display: block; }
+  #tab-tokens .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  #tab-tokens .detail-title { font-size: 16px; font-weight: 600; }
+  #tab-tokens .detail-meta { font-size: 12px; color: var(--tk-text3); }
+
+  #tab-tokens .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  #tab-tokens .chart-wrap { position: relative; height: 180px; }
+  #tab-tokens #tab-tokens .mini-stats { display: flex; flex-direction: column; gap: 10px; }
+  #tab-tokens .mini-stat {
+    background: var(--tk-bg3); border-radius: 6px;
+    padding: 10px 14px; border: 1px solid var(--tk-border);
+  }
+  #tab-tokens .mini-stat-label { font-size: 11px; color: var(--tk-text3); margin-bottom: 3px; }
+  #tab-tokens .mini-stat-value { font-size: 18px; font-weight: 600; }
+
+  /* ALERTS */
+  #tab-tokens .alerts-section { margin-bottom: 28px; }
+  #tab-tokens .alert-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 6px;
+    background: var(--tk-red-bg); border: 1px solid var(--tk-red-dim);
+    margin-bottom: 8px;
+  }
+  .alert-icon { color: var(--tk-red); font-size: 18px; flex-shrink: 0; }
+  .alert-text { flex: 1; font-size: 13px; }
+  .alert-time { font-size: 11px; color: var(--tk-text3); }
+  #tab-tokens .warning-item { background: var(--tk-amber-bg); border-color: var(--tk-amber-dim); }
+  #tab-tokens .warning-item .alert-icon { color: var(--tk-amber); }
+
+  /* LOADING */
+  #tab-tokens .loading-overlay {
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px; flex-direction: column; gap: 16px;
+  }
+  .spinner {
+    width: 28px; height: 28px; border: 2px solid var(--tk-border2);
+    border-top-color: var(--tk-blue); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* AUTH MODAL */
+  #tab-tokens .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center; z-index: 200;
+  }
+  #tab-tokens .modal{
+    background: var(--tk-bg2); border: 1px solid var(--tk-border2);
+    border-radius: 10px; padding: 28px; width: 420px; max-width: 95vw;
+  }
+  #tab-tokens .modalh2 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  #tab-tokens .modalp { font-size: 13px; color: var(--tk-text2); margin-bottom: 20px; line-height: 1.5; }
+  #tab-tokens .field{ margin-bottom: 14px; }
+  #tab-tokens .fieldlabel { display: block; font-size: 12px; color: var(--tk-text2); margin-bottom: 5px; }
+  #tab-tokens .fieldinput, #tab-tokens .fieldselect {
+    width: 100%; padding: 8px 12px; border-radius: 6px;
+    background: var(--tk-bg3); border: 1px solid var(--tk-border2);
+    color: var(--tk-text); font-size: 13px; outline: none;
+    transition: border-color 0.15s;
+  }
+  #tab-tokens .fieldinput:focus, #tab-tokens .fieldselect:focus { border-color: var(--tk-blue); }
+  #tab-tokens .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* EMPTY STATE */
+  #tab-tokens .empty{
+    text-align: center; padding: 50px 20px;
+    color: var(--tk-text3); font-size: 13px;
+  }
+  #tab-tokens .emptyi { font-size: 36px; display: block; margin-bottom: 10px; }
+
+  /* ERROR TOAST */
+  #tab-tokens .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--tk-bg3); border: 1px solid var(--tk-border2);
+    border-radius: 6px; padding: 10px 16px;
+    font-size: 13px; z-index: 300; opacity: 0;
+    transition: opacity 0.3s; pointer-events: none;
+  }
+  #tab-tokens .toast.show { opacity: 1; }
+  #tab-tokens .toast.err { border-color: var(--tk-red-dim); color: var(--tk-red); }
+  #tab-tokens .toast.ok { border-color: var(--tk-green-dim); color: var(--tk-green); }
+
+  /* MANUAL BALANCE MODAL */
+  #tab-tokens .balance-modal {
+    background: var(--tk-bg2); border: 1px solid var(--tk-border2);
+    border-radius: 10px; padding: 24px; width: 420px; max-width: 95vw;
+  }
+
+  @media (max-width: 700px) {
+    #tab-tokens .summary-bar { grid-template-columns: 1fr 1fr; }
+    #tab-tokens .detail-grid { grid-template-columns: 1fr; }
+    #tab-tokens .topbar { padding: 10px 14px; }
+    #tab-tokens .main{ padding: 14px; }
+  }
+
 </style>
 </head>
 <body>
@@ -509,26 +780,102 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
     </div>
     <div id="tab-alerts" style="display:none"><div class="alert-list" id="alert-list"></div></div>
     <div id="tab-tokens" style="display:none">
-      <div class="token-page-header">
-        <div><h2>&#128179; Prepaid token management</h2><p>Daily grid usage auto-deducted. Alert email: <strong>Edwardsmc@state.gov</strong></p></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" onclick="exportTokenCSV()">&#8595; Export CSV</button>
-          <button class="btn btn-primary" onclick="openTopupModal(0)">+ Top up site</button>
-          <button class="btn" style="background:#1a202c;color:#fff;border-color:#1a202c" onclick="topupAllSites()">Top up all (1,000 kWh)</button>
-        </div>
+<div id="app" style="display:none">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark"><i class="ti ti-bolt"></i></div>
+      <h1>CPT Tokens <span>/ Fleet Monitor</span></h1>
+    </div>
+    <div class="topbar-right">
+      <span id="statusDot" class="status-dot"></span>
+      <span id="last-refresh">Not refreshed</span>
+      <button class="btn" onclick="refreshAll()"><i class="ti ti-refresh"></i> Refresh</button>
+      <button class="btn" onclick="showAuth()"><i class="ti ti-settings"></i></button>
+    </div>
+  </div>
+
+  <!-- SUMMARY BAR -->
+  <div class="summary-bar">
+    <div class="summary-cell">
+      <span class="label">Total Sites</span>
+      <span class="value" id="sumTotal">—</span>
+      <span class="sub">monitored</span>
+    </div>
+    <div class="summary-cell">
+      <span class="label">Total Balance</span>
+      <span class="value c-blue" id="sumBalance">—</span>
+      <span class="sub">kWh across fleet</span>
+    </div>
+    <div class="summary-cell">
+      <span class="label">Critical Alerts</span>
+      <span class="value c-red" id="sumAlerts">—</span>
+      <span class="sub">below 1,100 kWh threshold</span>
+    </div>
+    <div class="summary-cell">
+      <span class="label">Avg Daily Draw</span>
+      <span class="value c-teal" id="sumAvgUsage">—</span>
+      <span class="sub">kWh / site today</span>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- ALERTS SECTION (collapsible) -->
+    <div class="alerts-section" id="alertsSection" style="display:none">
+      <div class="section-header" onclick="toggleAlerts()" style="cursor:pointer;user-select:none">
+        <span class="section-title"><i class="ti ti-alert-triangle" style="color:var(--red);margin-right:6px"></i>Active Alerts <span id="alertsCount" style="font-size:11px;background:var(--red);color:#fff;padding:1px 7px;border-radius:20px;margin-left:6px;font-weight:600"></span></span>
+        <i class="ti ti-chevron-down" id="alertsChevron" style="color:var(--text3);font-size:16px;transition:transform 0.2s"></i>
       </div>
-      <div id="token-alert-area"></div>
-      <div class="token-summary-grid" id="token-summary-grid"></div>
-      <div class="token-table-wrap">
-        <div class="token-table-header"><h3>All sites</h3><span style="font-size:13px;color:var(--muted)" id="token-site-count"></span></div>
-        <div style="overflow-x:auto">
-          <table class="token-tbl">
-            <thead><tr><th>Site</th><th>Status</th><th>Tokens remaining</th><th>Daily grid usage</th><th>Est. days left</th><th>Top up</th></tr></thead>
-            <tbody id="token-tbody"></tbody>
-          </table>
-        </div>
+      <div id="alertsList" style="display:none"></div>
+    </div>
+
+    <!-- SITE CARDS -->
+    <div class="section-header">
+      <span class="section-title">All Sites</span>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setFilter('alert',this)">Alerts</button>
+        <button class="filter-btn" onclick="setFilter('ok',this)">Healthy</button>
+        <button class="filter-btn" onclick="setFilter('offline',this)">Offline</button>
       </div>
     </div>
+    <div class="site-grid" id="siteGrid">
+      <div class="loading-overlay" style="grid-column:1/-1">
+        <div class="spinner"></div>
+        <span style="color:var(--text3)">Loading sites…</span>
+      </div>
+    </div>
+
+    <!-- DETAIL PANEL -->
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-header">
+        <div>
+          <div class="detail-title" id="detailName">—</div>
+          <div class="detail-meta" id="detailMeta">—</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="editBalanceBtn" onclick="openBalanceModal()"><i class="ti ti-coin"></i> Manage tokens</button>
+          <button class="btn" onclick="closeDetail()"><i class="ti ti-x"></i> Close</button>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px">7-day grid draw history (kWh)</div>
+          <div class="chart-wrap">
+            <canvas id="historyChart" role="img" aria-label="7-day grid draw history for selected site">No history data available.</canvas>
+          </div>
+        </div>
+        <div class="mini-stats" id="miniStats"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div>
   </div>
 </main>
 <div class="topup-modal-overlay" id="topup-modal-overlay">
@@ -566,278 +913,542 @@ let token=null,sites=[],liveData={},chart=null,activeTab='fleet';
 let selectedReserve=null,selectedSites=new Set(),refreshTimer=null;
 const REFRESH_INTERVAL=5*60*1000;
 
-// TOKEN SYSTEM — driven by real Tesla sites
-// tokenSites is built from the live sites[] array after fleet loads.
-// Balances stored in localStorage keyed by energy_site_id.
-// gridUsage fetched from Tesla calendar_history (yesterday's grid import).
-
-const STORAGE_KEY = 'cpt_tokens_v2';
-
-function loadTokenStore() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(_) { return {}; }
+function tokLoadAuth(){
+  const t=token||localStorage.getItem('cpt_shared_tok')||'';
+  const cid=localStorage.getItem('cpt_shared_cid')||localStorage.getItem('cpt_client_id')||'';
+  cfg={proxy:PROXY,token:t,rtok:localStorage.getItem('cpt_shared_rtok')||'',cid:cid,region:'na'};
 }
+
+const THRESHOLD = 1100;
+const STORAGE_KEY = 'cpt_tokens_v2';
+const AUTH_KEY = 'cpt_tokens_auth';
+
+let cfg = {};
+let tokSitesData = [];
+let tokActiveFilter = 'all';
+let tokHistChart = null;
+let tokSelectedSiteId = null;
+
+function tokShowToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || 'ok');
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+function saveAuth() {
+  cfg = {
+    proxy: document.getElementById('proxyUrl').value.trim().replace(/\/$/, ''),
+    token: document.getElementById('accessToken').value.trim(),
+    region: document.getElementById('region').value
+  };
+  localStorage.setItem(AUTH_KEY, JSON.stringify(cfg));
+}
+
+function loadAuth() {
+  // Try shared session written by index.html first
+  const sharedTok  = localStorage.getItem('cpt_shared_tok');
+  const sharedRtok = localStorage.getItem('cpt_shared_rtok');
+  const sharedCid  = localStorage.getItem('cpt_shared_cid');
+  if (sharedTok) {
+    cfg = { proxy: PROXY, token: sharedTok, rtok: sharedRtok||'', cid: sharedCid||'', region:'na' };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(cfg));
+    return true;
+  }
+  // Fall back to manually saved credentials
+  try {
+    const s = localStorage.getItem(AUTH_KEY);
+    if (s) {
+      const p = JSON.parse(s);
+      cfg = p;
+      if (p.proxy) document.getElementById('proxyUrl').value = p.proxy;
+      if (p.token) document.getElementById('accessToken').value = p.token;
+      if (p.region) document.getElementById('region').value = p.region;
+      return !!(p.token);
+    }
+  } catch(e) {}
+  return false;
+}
+
+async function silentRefreshToken() {
+  const rtok = cfg.rtok || localStorage.getItem('cpt_shared_rtok');
+  const cid  = cfg.cid  || localStorage.getItem('cpt_shared_cid');
+  if (!rtok || !cid) return false;
+  try {
+    const r = await fetch(PROXY + '/refresh', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({client_id: cid, refresh_token: rtok})
+    });
+    if (!r.ok) return false;
+    const d = await r.json();
+    if (d.access_token) {
+      cfg.token = d.access_token;
+      if (d.refresh_token) cfg.rtok = d.refresh_token;
+      localStorage.setItem('cpt_shared_tok', cfg.token);
+      if (d.refresh_token) localStorage.setItem('cpt_shared_rtok', d.refresh_token);
+      localStorage.setItem(AUTH_KEY, JSON.stringify(cfg));
+      return true;
+    }
+  } catch(_) {}
+  return false;
+}
+
+// Silent token refresh every 6 hours
+setInterval(async () => { if (await silentRefreshToken()) tokRefreshAll(); }, 6*60*60*1000);
+
+function connect() {
+  saveAuth();
+  if (!cfg.token) { tokShowToast('Access token required', 'err'); return; }
+  document.getElementById('authModal').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  tokRefreshAll();
+}
+
+function showAuth() {
+  document.getElementById('authModal').style.display = 'flex';
+}
+
+async function apiGet(path) {
+  const url = cfg.proxy + path;
+  const res = await fetch(url, {
+    headers: { 'Authorization': 'Bearer ' + cfg.token }
+  });
+  if (res.status === 401) {
+    const refreshed = await silentRefreshToken();
+    if (refreshed) {
+      // Retry once with new token
+      const res2 = await fetch(url, { headers: { 'Authorization': 'Bearer ' + cfg.token } });
+      if (res2.ok) return res2.json();
+    }
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error('API ' + res.status + (body ? ': ' + body.slice(0, 120) : ''));
+  }
+  return res.json();
+}
+
+function getTokenStore() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+}
+
 function saveTokenStore(store) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
-// Called after sites[] is populated. Merges live sites with persisted balances.
-function syncTokenSites() {
-  const store = loadTokenStore();
-  tokenSites = sites.map(s => {
-    const id = String(s.energy_site_id);
-    const saved = store[id] || {};
-    return {
-      id: id,
-      name: s.site_name || ('Site ' + s.energy_site_id),
-      status: s.gateway_id ? 'online' : 'offline',
-      gridUsage: saved.gridUsage || 0,   // filled by fetchTokenGridUsage()
-      tokens: saved.tokens !== undefined ? saved.tokens : 0,
-      lastUpdated: saved.lastUpdated || null,
-      lastDeductedDate: saved.lastDeductedDate || null,
-      lastDeductedKwh: saved.lastDeductedKwh || 0,
-    };
-  });
-}
+async function tokRefreshAll() {
+  document.getElementById('statusDot').className = 'status-dot';
+  document.getElementById('last-refresh').textContent = 'Refreshing…';
+  tokSetGridLoading();
 
-// Persist current tokenSites back to store
-function persistTokenSites() {
-  const store = loadTokenStore();
-  tokenSites.forEach(s => {
-    if (!store[s.id]) store[s.id] = {};
-    store[s.id].tokens = s.tokens;
-    store[s.id].gridUsage = s.gridUsage;
-    store[s.id].lastUpdated = s.lastUpdated;
-    if (s.lastDeductedDate) store[s.id].lastDeductedDate = s.lastDeductedDate;
-    if (s.lastDeductedKwh) store[s.id].lastDeductedKwh = s.lastDeductedKwh;
-  });
-  saveTokenStore(store);
-}
+  try {
+    const prod = await apiGet('/api/1/products');
+    const energySites = (prod.response || []).filter(function(p) { return p.energy_site_id; });
 
-// Fetch yesterday's grid import for all sites (calendar_history energy day)
-// Fetch today's grid import for all sites and subtract from token balances
-async function fetchTokenGridUsage() {
-  if (!sites.length) return;
-  const today = new Date().toISOString().split('T')[0];
-  const store = loadTokenStore();
+    const store = getTokenStore();
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
 
-  await Promise.all(tokenSites.map(async (ts, i) => {
-    const siteId = ts.id;
-    try {
-      // kind=energy returns empty for these sites — use kind=power instead
-      const d = await api('/energy_sites/' + siteId + '/calendar_history?kind=power&period=day');
-      const series = (d.response && d.response.time_series) ? d.response.time_series : [];
-      if (!series.length) return;
+    const results = await Promise.all(energySites.map(async function(site) {
+      const siteId = String(site.energy_site_id);
 
-      // Calculate interval duration in hours (typically 5 min = 0.0833h)
-      const intervalHours = series.length > 1
-        ? (new Date(series[1].timestamp) - new Date(series[0].timestamp)) / 3600000
-        : 0.0833;
+      // Live status
+      let liveData = {};
+      try {
+        const live = await apiGet('/api/1/energy_sites/' + siteId + '/live_status');
+        liveData = live.response || {};
+      } catch(e) {}
 
-      // Sum only positive grid_power (import from grid, not export back)
-      let totalGridKwh = 0;
-      series.forEach(entry => {
-        const gridKw = (entry.grid_power || 0) / 1000;
-        if (gridKw > 0) totalGridKwh += gridKw * intervalHours;
-      });
-      const gridUsageKwh = Math.round(totalGridKwh * 10) / 10;
-
-      tokenSites[i].gridUsage = gridUsageKwh;
-      tokenSites[i].lastUpdated = new Date().toISOString();
-
-      // Subtract from token balance, guarded so we only deduct the difference
-      // if this site has already been deducted today
-      const savedEntry = store[siteId] || {};
-      const prevDeductedKwh = (savedEntry.lastDeductedDate === today)
-        ? (savedEntry.lastDeductedKwh || 0)
-        : 0;
-      const diff = gridUsageKwh - prevDeductedKwh;
-
-      if (diff > 0) {
-        tokenSites[i].tokens = Math.max(0, Math.round((tokenSites[i].tokens - diff) * 10) / 10);
+      // Determine online status from live_status
+      // If call fails or returns no meaningful data, site is offline
+      let isOnline = false;
+      try {
+        const liveResp = await apiGet('/api/1/energy_sites/' + siteId + '/live_status');
+        liveData = liveResp.response || {};
+        // Site is online if we get a valid response with actual power data
+        isOnline = !!(liveData && (
+          liveData.solar_power !== undefined ||
+          liveData.battery_power !== undefined ||
+          liveData.load_power !== undefined
+        ));
+      } catch(e) {
+        isOnline = false;
       }
 
-      // Save deduction record
-      if (!store[siteId]) store[siteId] = {};
-      store[siteId].lastDeductedDate = today;
-      store[siteId].lastDeductedKwh = gridUsageKwh;
+      // Today's grid draw - use kind=power (kind=energy returns empty for these sites)
+      // Sum positive grid_power values across all intervals to get total grid import
+      let todayUsageWh = 0;
+      let todayUsageKwh = 0;
+      try {
+        const hist = await apiGet('/api/1/energy_sites/' + siteId + '/calendar_history?kind=power&period=day');
+        const ts = (hist && hist.response && hist.response.time_series) ? hist.response.time_series : [];
+        if (ts.length > 0) {
+          // Calculate interval hours (typically 5-minute = 0.0833h)
+          const intervalHours = ts.length > 1
+            ? (new Date(ts[1].timestamp) - new Date(ts[0].timestamp)) / 3600000
+            : 0.0833;
+          // Sum only positive grid_power (import from grid, not export)
+          let totalGridKwh = 0;
+          ts.forEach(function(entry) {
+            const gridKw = (entry.grid_power || 0) / 1000;
+            if (gridKw > 0) totalGridKwh += gridKw * intervalHours;
+          });
+          todayUsageKwh = Math.round(totalGridKwh * 10) / 10;
+          todayUsageWh = Math.round(totalGridKwh * 1000);
+          console.log('[CPT Tokens] Site ' + siteId + ' grid import: ' + todayUsageKwh + ' kWh (' + ts.length + ' intervals, ' + intervalHours.toFixed(4) + 'h each)');
+        }
+      } catch(e) {
+        console.warn('[CPT Tokens] calendar_history failed for ' + siteId, e);
+      }
 
-    } catch(_) {
-      // Keep existing value on error
-    }
-  }));
+      // Token balance - subtract today's kWh from stored balance
+      // We store lastUpdatedWh to re-subtract if the value changes during the day
+      if (!store[siteId]) store[siteId] = { balance: 0, lastUpdated: null, lastUpdatedWh: 0, history: [] };
+      const entry = store[siteId];
 
-  persistTokenSites();
-  // Also update the store with deduction metadata
-  tokenSites.forEach(s => {
-    if (!store[s.id]) store[s.id] = {};
-    store[s.id].tokens = s.tokens;
-    store[s.id].gridUsage = s.gridUsage;
-    store[s.id].lastUpdated = s.lastUpdated;
-  });
-  saveTokenStore(store);
+      if (todayUsageKwh > 0) {
+        if (entry.lastUpdated !== today) {
+          // New day - subtract fresh
+          entry.balance = Math.max(0, (entry.balance || 0) - todayUsageKwh);
+          entry.lastUpdated = today;
+          entry.lastUpdatedWh = todayUsageWh;
+          const h = entry.history || [];
+          h.push({ date: today, used: todayUsageKwh });
+          entry.history = h.slice(-30);
+          store[siteId] = entry;
+        } else if (todayUsageWh > (entry.lastUpdatedWh || 0)) {
+          // Same day but usage has increased - subtract the difference
+          const prevKwh = Math.round((entry.lastUpdatedWh || 0) / 1000);
+          const diffKwh = todayUsageKwh - prevKwh;
+          if (diffKwh > 0) {
+            entry.balance = Math.max(0, (entry.balance || 0) - diffKwh);
+            entry.lastUpdatedWh = todayUsageWh;
+            // Update today's history entry
+            const h = entry.history || [];
+            if (h.length > 0 && h[h.length - 1].date === today) {
+              h[h.length - 1].used = todayUsageKwh;
+            }
+            entry.history = h;
+            store[siteId] = entry;
+          }
+        }
+      }
 
-  if (activeTab === 'tokens') renderTokenTab();
+      return {
+        id: siteId,
+        name: site.site_name || ('Site ' + siteId),
+        gateway: site.gateway_id || null,
+        isOnline: isOnline,
+        balance: entry.balance || 0,
+        todayUsage: todayUsageKwh,
+        todayUsageWh: todayUsageWh,
+        history: (entry.history || []).slice(-7),
+        lastUpdated: entry.lastUpdated,
+        backup_percent: (liveData.backup_reserve_percent !== undefined) ? liveData.backup_reserve_percent : null,
+        battery_power: liveData.battery_power || 0,
+        solar_power: liveData.solar_power || 0,
+      };
+    }));
+
+    tokSitesData = results;
+    saveTokenStore(store);
+
+    tokUpdateSummary();
+    tokRenderCards();
+    tokRenderAlerts();
+
+    document.getElementById('statusDot').className = 'status-dot live';
+    document.getElementById('last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+  } catch(err) {
+    document.getElementById('statusDot').className = 'status-dot';
+    document.getElementById('last-refresh').textContent = 'Error';
+    tokShowToast('Failed: ' + err.message, 'err');
+    tokSetGridError(err.message);
+  }
 }
 
-let tokenSites = [];
+function tokUpdateSummary() {
+  const total = tokSitesData.length;
+  const totalBalance = tokSitesData.reduce(function(s, d) { return s + (d.balance || 0); }, 0);
+  const alerts = tokSitesData.filter(function(d) { return d.balance < THRESHOLD; }).length;
+  const usages = tokSitesData.filter(function(d) { return d.todayUsage > 0; });
+  const avgUsage = usages.length > 0
+    ? Math.round(usages.reduce(function(s, d) { return s + d.todayUsage; }, 0) / usages.length)
+    : 0;
 
-function renderTokenTab() {
-  if (!tokenSites.length) {
-    document.getElementById('token-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading token data… Please wait for fleet to load first.</td></tr>';
-    document.getElementById('token-alert-area').innerHTML = '';
-    document.getElementById('token-summary-grid').innerHTML = '';
-    document.getElementById('token-site-count').textContent = '';
+  document.getElementById('sumTotal').textContent = total;
+  document.getElementById('sumBalance').textContent = totalBalance.toLocaleString() + ' kWh';
+  document.getElementById('sumAlerts').textContent = alerts;
+  document.getElementById('sumAvgUsage').textContent = avgUsage ? avgUsage + ' kWh' : '—';
+}
+
+function tokSetFilter(f, el) {
+  tokActiveFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  tokRenderCards();
+}
+
+function tokFilteredSites() {
+  if (tokActiveFilter === 'alert') return tokSitesData.filter(function(d) { return d.balance < THRESHOLD; });
+  if (tokActiveFilter === 'ok') return tokSitesData.filter(function(d) { return d.balance >= THRESHOLD && d.isOnline; });
+  if (tokActiveFilter === 'offline') return tokSitesData.filter(function(d) { return !d.isOnline; });
+  return tokSitesData;
+}
+
+function tokRenderCards() {
+  const grid = document.getElementById('siteGrid');
+  const sites = tokFilteredSites();
+
+  if (!sites.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><i class="ti ti-database-off"></i>No sites match this filter.</div>';
     return;
   }
-  renderTokenSummary();
-  renderTokenAlerts();
-  renderTokenTable();
-  document.getElementById('token-site-count').textContent = tokenSites.length + ' site' + (tokenSites.length !== 1 ? 's' : '');
-}
 
-function renderTokenSummary() {
-  const total = tokenSites.reduce((a, s) => a + s.tokens, 0);
-  const low = tokenSites.filter(s => s.tokens < LOW_TOKEN_THRESHOLD && s.tokens > 0).length;
-  const active = tokenSites.filter(s => s.gridUsage > 0 && s.tokens > 0);
-  const avgDays = active.length ? active.reduce((a, s) => a + Math.floor(s.tokens / s.gridUsage), 0) / active.length : 0;
-  document.getElementById('token-summary-grid').innerHTML =
-    '<div class="token-stat"><div class="ts-label">Total tokens</div><div class="ts-value">' + Math.round(total).toLocaleString() + ' kWh</div><div class="ts-sub">Across ' + tokenSites.length + ' sites</div></div>' +
-    '<div class="token-stat ts-alert"><div class="ts-label">Low token alerts</div><div class="ts-value">' + low + '</div><div class="ts-sub">Sites below 1,100 kWh</div></div>' +
-    '<div class="token-stat"><div class="ts-label">Avg days remaining</div><div class="ts-value">' + (active.length ? Math.round(avgDays) : '—') + '</div><div class="ts-sub">Active sites only</div></div>' +
-    '<div class="token-stat"><div class="ts-label">Alert threshold</div><div class="ts-value">1,100 kWh</div><div class="ts-sub">Email: ' + ALERT_EMAIL + '</div></div>';
-}
+  grid.innerHTML = sites.map(function(s) {
+    const pct = Math.min(100, Math.round((s.balance / 5000) * 100));
+    const isAlert = s.balance < THRESHOLD;
+    const isWarning = s.balance >= THRESHOLD && s.balance < THRESHOLD * 1.5;
+    const fillClass = isAlert ? 'fill-red' : isWarning ? 'fill-amber' : 'fill-green';
+    const balColor = isAlert ? 'c-red' : isWarning ? 'c-amber' : 'c-green';
+    const cardClass = (isAlert ? 'alert' : isWarning ? 'warning' : '') + (tokSelectedSiteId === s.id ? ' selected' : '');
+    const onlineDot = s.isOnline
+      ? '<span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span> Online'
+      : '<span style="width:5px;height:5px;border-radius:50%;background:var(--red);display:inline-block"></span> Offline';
+    const badgeClass = s.isOnline ? 'badge-online' : 'badge-offline';
+    const daysLeft = (s.todayUsage > 0) ? Math.floor(s.balance / s.todayUsage) : null;
 
-function renderTokenAlerts() {
-  const area = document.getElementById('token-alert-area');
-  const low = tokenSites.filter(s => s.tokens > 0 && s.tokens < LOW_TOKEN_THRESHOLD);
-  const zero = tokenSites.filter(s => s.tokens === 0);
-  let html = '';
-  if (low.length) {
-    html += '<div class="token-alert-box"><span style="font-size:18px">&#9888;&#65039;</span><div>' +
-      '<div class="ta-title">' + low.length + ' site' + (low.length > 1 ? 's' : '') + ' below 1,100 kWh — alert sent to ' + ALERT_EMAIL + '</div>' +
-      '<div class="ta-body">' + low.map(s => s.name + ': ' + Math.round(s.tokens) + ' kWh').join(' · ') + '</div>' +
-      '</div></div>';
-  }
-  if (zero.length) {
-    html += '<div class="token-alert-box" style="background:#fff1f2;border-color:#fecdd3"><span style="font-size:18px">&#128308;</span><div>' +
-      '<div class="ta-title" style="color:#881337">' + zero.length + ' site' + (zero.length > 1 ? 's' : '') + ' have zero tokens — top up required</div>' +
-      '<div class="ta-body" style="color:#9f1239">' + zero.map(s => s.name).join(' · ') + '</div>' +
-      '</div></div>';
-  }
-  area.innerHTML = html;
-}
-
-function renderTokenTable() {
-  const tbody = document.getElementById('token-tbody');
-  if (!tokenSites.length) { tbody.innerHTML = ''; return; }
-  tbody.innerHTML = tokenSites.map((s, i) => {
-    const low = s.tokens > 0 && s.tokens < LOW_TOKEN_THRESHOLD;
-    const zero = s.tokens === 0;
-    const days = s.gridUsage > 0 && s.tokens > 0 ? Math.floor(s.tokens / s.gridUsage) : (s.tokens === 0 ? 0 : '—');
-    const pct = Math.min(100, s.tokens > 0 ? Math.round(s.tokens / 10) : 0);
-    const bc = zero ? '#ef4444' : low ? '#f97316' : s.tokens < 400 ? '#f59e0b' : '#10b981';
-    const st = s.status === 'online'
-      ? '<span class="tk-status-online">Online</span>'
-      : '<span class="tk-status-offline">Offline</span>';
-    const usageTxt = s.gridUsage > 0
-      ? s.gridUsage.toFixed(1) + ' kWh/day'
-      : '<span style="color:var(--muted);font-size:11px">fetching…</span>';
-    const daysClass = (typeof days === 'number' && days < 10) ? 'tk-days-low' : '';
-    const daysTxt = typeof days === 'number' ? days + ' days' : days;
-    return '<tr>' +
-      '<td><div style="font-weight:600">' + s.name + '</div><div style="font-size:11px;color:var(--muted)">' + s.id + '</div></td>' +
-      '<td>' + st + '</td>' +
-      '<td><div style="display:flex;align-items:center;gap:8px">' +
-        '<div class="tk-bar-wrap"><div class="tk-bar-inner" style="width:' + pct + '%;background:' + bc + '"></div></div>' +
-        '<span class="tk-remaining ' + (low || zero ? 'low' : '') + '">' + Math.round(s.tokens) + ' kWh</span>' +
-        (zero ? '<span class="tk-low-badge">Zero</span>' : low ? '<span class="tk-low-badge">Low</span>' : '') +
-      '</div></td>' +
-      '<td>' + usageTxt + '</td>' +
-      '<td class="' + daysClass + '">' + daysTxt + '</td>' +
-      '<td><div class="tk-input-row"><input class="tk-input" type="number" id="tki' + i + '" value="1000" min="100" step="100"><button class="tk-add-btn" onclick="addTokensToSite(' + i + ')">Add</button></div></td>' +
-      '</tr>';
+    return '<div class="site-card ' + cardClass + '" onclick="tokSelectSite(\'' + s.id + '\')">'
+      + '<div class="card-top">'
+      +   '<div><div class="site-name">' + s.name + '</div><div class="site-id">' + s.id + '</div></div>'
+      +   '<span class="status-badge ' + badgeClass + '">' + onlineDot + '</span>'
+      + '</div>'
+      + '<div class="token-row">'
+      +   '<span class="token-value ' + balColor + '">' + s.balance.toLocaleString() + '</span>'
+      +   '<span class="token-unit">kWh</span>'
+      +   '<span class="token-threshold">/ 1,100 min</span>'
+      + '</div>'
+      + '<div class="progress-bar"><div class="progress-fill ' + fillClass + '" style="width:' + pct + '%"></div></div>'
+      + '<div class="card-stats">'
+      +   '<div class="stat-item"><span class="stat-label">Today\'s draw</span><span class="stat-value">' + (s.todayUsage ? s.todayUsage.toLocaleString() + ' kWh' : '—') + (s.todayUsageWh ? '<span style="font-size:10px;color:var(--text3);display:block">' + s.todayUsageWh.toLocaleString() + ' Wh raw</span>' : '') + '</span></div>'
+      +   '<div class="stat-item"><span class="stat-label">Days remaining</span><span class="stat-value ' + (isAlert ? 'c-red' : '') + '">' + (daysLeft !== null ? daysLeft + 'd' : '—') + '</span></div>'
+      +   '<div class="stat-item"><span class="stat-label">Battery reserve</span><span class="stat-value">' + (s.backup_percent !== null ? s.backup_percent + '%' : '—') + '</span></div>'
+      +   '<div class="stat-item"><span class="stat-label">Last updated</span><span class="stat-value">' + (s.lastUpdated || '—') + '</span></div>'
+      + '</div>'
+      + '</div>';
   }).join('');
 }
 
-function addTokensToSite(i) {
-  const inp = document.getElementById('tki' + i);
-  const amt = parseInt(inp.value);
-  if (!amt || amt < 1) return;
-  tokenSites[i].tokens = Math.round((tokenSites[i].tokens + amt) * 10) / 10;
-  persistTokenSites();
-  renderTokenTab();
-  showTkToast('Added ' + amt + ' kWh to ' + tokenSites[i].name);
+function tokRenderAlerts() {
+  const alerts = tokSitesData.filter(function(d) { return d.balance < THRESHOLD; });
+  const warnings = tokSitesData.filter(function(d) { return d.balance >= THRESHOLD && d.balance < THRESHOLD * 1.5; });
+  const section = document.getElementById('alertsSection');
+  if (!alerts.length && !warnings.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  const total = alerts.length + warnings.length;
+  document.getElementById('alertsCount').textContent = total;
+
+  document.getElementById('alertsList').innerHTML = alerts.map(function(s) {
+    return '<div class="alert-item"><i class="ti ti-alert-triangle alert-icon"></i>'
+      + '<div class="alert-text"><strong>' + s.name + '</strong> — balance critically low: <strong>' + s.balance.toLocaleString() + ' kWh</strong> (threshold 1,100 kWh)</div>'
+      + '<span class="alert-time">' + (s.lastUpdated || '—') + '</span></div>';
+  }).concat(warnings.map(function(s) {
+    return '<div class="alert-item warning-item"><i class="ti ti-alert-circle alert-icon"></i>'
+      + '<div class="alert-text"><strong>' + s.name + '</strong> — approaching threshold: <strong>' + s.balance.toLocaleString() + ' kWh</strong></div>'
+      + '<span class="alert-time">' + (s.lastUpdated || '—') + '</span></div>';
+  })).join('');
 }
 
-function openTopupModal(idx) {
-  if (!tokenSites.length) return;
-  const sel = document.getElementById('topup-site-select');
-  sel.innerHTML = tokenSites.map((s, i) => '<option value="' + i + '"' + (i === idx ? ' selected' : '') + '>' + s.name + '</option>').join('');
-  document.getElementById('topup-amount').value = 1000;
-  document.getElementById('topup-ref').value = '';
-  document.getElementById('topup-modal-overlay').classList.add('open');
+function tokToggleAlerts() {
+  const list = document.getElementById('alertsList');
+  const chevron = document.getElementById('alertsChevron');
+  const open = list.style.display !== 'none';
+  list.style.display = open ? 'none' : 'block';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
 
-function closeTopupModal() { document.getElementById('topup-modal-overlay').classList.remove('open'); }
+async function tokSelectSite(siteId) {
+  if (tokSelectedSiteId === siteId) { tokCloseDetail(); return; }
+  tokSelectedSiteId = siteId;
+  tokRenderCards();
 
-function confirmTopup() {
-  const i = parseInt(document.getElementById('topup-site-select').value);
-  const amt = parseInt(document.getElementById('topup-amount').value);
-  if (!amt || amt < 1) return;
-  tokenSites[i].tokens = Math.round((tokenSites[i].tokens + amt) * 10) / 10;
-  persistTokenSites();
-  renderTokenTab();
-  closeTopupModal();
-  showTkToast('Added ' + amt + ' kWh to ' + tokenSites[i].name);
-}
+  const site = tokSitesData.find(function(s) { return s.id === siteId; });
+  if (!site) return;
 
-function topupAllSites() {
-  tokenSites.forEach(s => { s.tokens = Math.round((s.tokens + 1000) * 10) / 10; });
-  persistTokenSites();
-  renderTokenTab();
-  showTkToast('Added 1,000 kWh to all ' + tokenSites.length + ' sites');
-}
+  document.getElementById('detailPanel').classList.add('visible');
+  document.getElementById('detailName').textContent = site.name;
+  document.getElementById('detailMeta').textContent = 'ID: ' + site.id + '  ·  Gateway: ' + (site.gateway || 'N/A');
 
-function exportTokenCSV() {
-  const rows = [['Site Name', 'Site ID', 'Status', 'Tokens kWh', 'Daily Usage kWh/day', 'Est Days Left']];
-  tokenSites.forEach(s => {
-    const d = s.gridUsage > 0 && s.tokens > 0 ? Math.floor(s.tokens / s.gridUsage) : 'N/A';
-    rows.push([s.name, s.id, s.status, Math.round(s.tokens), s.gridUsage || 0, d]);
-  });
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = 'tokens_' + new Date().toISOString().slice(0, 10) + '.csv';
-  a.click();
-  showTkToast('CSV exported');
-}
+  const isAlert = site.balance < THRESHOLD;
+  document.getElementById('miniStats').innerHTML = [
+    ['Current balance', (site.balance.toLocaleString() + ' kWh'), isAlert ? 'c-red' : 'c-green'],
+    ["Today's grid draw", (site.todayUsage ? site.todayUsage.toLocaleString() + ' kWh' : 'No data'), ''],
+    ['Days until threshold', (site.todayUsage > 0 ? Math.floor(site.balance / site.todayUsage) + ' days' : '—'), isAlert ? 'c-red' : ''],
+    ['Battery reserve', (site.backup_percent !== null ? site.backup_percent + '%' : '—'), '']
+  ].map(function(r) {
+    return '<div class="mini-stat"><div class="mini-stat-label">' + r[0] + '</div><div class="mini-stat-value ' + r[2] + '">' + r[1] + '</div></div>';
+  }).join('');
 
-function showTkToast(msg) {
-  const t = document.getElementById('tk-toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 3000);
-}
+  // Fetch 7-day history
+  let hist = site.history || [];
+  if (!hist.length) {
+    try {
+      const now = new Date();
+      const end = now.toISOString().split('T')[0];
+      const start = new Date(now - 7 * 86400000).toISOString().split('T')[0];
+      const data = await apiGet('/api/1/energy_sites/' + siteId + '/calendar_history?kind=power&period=week');
+      const ts = (data && data.response && data.response.time_series) ? data.response.time_series : [];
+      // Group by day and sum positive grid_power
+      const byDay = {};
+      const intervalHours = ts.length > 1 ? (new Date(ts[1].timestamp) - new Date(ts[0].timestamp)) / 3600000 : 0.0833;
+      ts.forEach(function(entry) {
+        const day = entry.timestamp ? entry.timestamp.split('T')[0] : null;
+        if (!day) return;
+        if (!byDay[day]) byDay[day] = 0;
+        const gridKw = (entry.grid_power || 0) / 1000;
+        if (gridKw > 0) byDay[day] += gridKw * intervalHours;
+      });
+      hist = Object.keys(byDay).sort().map(function(day) {
+        return { date: day, used: Math.round(byDay[day] * 10) / 10 };
+      });
+    } catch(e) {}
+  }
 
-document.getElementById('topup-modal-overlay').addEventListener('click', function(e) {
-  if (e.target === this) closeTopupModal();
-});
+  const labels = hist.map(function(h) { return (h.date || '').slice(5); });
+  const vals = hist.map(function(h) { return h.used || h.grid || 0; });
 
-// Deduct tokens every 60s based on real gridUsage (1/1440th of daily usage per minute)
-setInterval(() => {
-  if (!tokenSites.length) return;
-  let changed = false;
-  tokenSites.forEach(s => {
-    if (s.status !== 'offline' && s.gridUsage > 0 && s.tokens > 0) {
-      s.tokens = Math.max(0, Math.round((s.tokens - s.gridUsage / 1440) * 100) / 100);
-      changed = true;
+  if (tokHistChart) { tokHistChart.destroy(); tokHistChart = null; }
+  tokHistChart = new Chart(document.getElementById('historyChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Grid draw (kWh)',
+        data: vals,
+        backgroundColor: 'rgba(56,139,253,0.45)',
+        borderColor: '#388bfd',
+        borderWidth: 1,
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#6e7681', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#6e7681', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } }
+      }
     }
   });
-  if (changed) {
-    persistTokenSites();
-    if (activeTab === 'tokens') renderTokenTab();
+
+  document.getElementById('detailPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function tokCloseDetail() {
+  tokSelectedSiteId = null;
+  if (tokHistChart) { tokHistChart.destroy(); tokHistChart = null; }
+  document.getElementById('detailPanel').classList.remove('visible');
+  tokRenderCards();
+}
+
+// Token management modal
+function openBalanceModal() {
+  if (!tokSelectedSiteId) return;
+  const site = tokSitesData.find(function(s) { return s.id === tokSelectedSiteId; });
+  const bal = site ? site.balance : 0;
+  document.getElementById('balanceModalSiteName').textContent = site ? site.name + '  ·  ID: ' + site.id : '';
+  document.getElementById('currentBalanceDisplay').textContent = bal.toLocaleString();
+  document.getElementById('addCurrentDisplay').textContent = bal.toLocaleString() + ' kWh';
+  document.getElementById('addNewDisplay').textContent = bal.toLocaleString() + ' kWh';
+  document.getElementById('balanceSetInput').value = '';
+  document.getElementById('balanceAddInput').value = '';
+  document.getElementById('addAmountDisplay').textContent = '+ 0 kWh';
+  switchBalanceTab('set');
+  document.getElementById('balanceModal').style.display = 'flex';
+}
+
+function closeBalanceModal() {
+  document.getElementById('balanceModal').style.display = 'none';
+}
+
+function switchBalanceTab(tab) {
+  const isSet = tab === 'set';
+  document.getElementById('panelSet').style.display = isSet ? 'block' : 'none';
+  document.getElementById('panelAdd').style.display = isSet ? 'none' : 'block';
+  document.getElementById('tabSet').style.background = isSet ? 'var(--blue)' : 'var(--bg3)';
+  document.getElementById('tabSet').style.color = isSet ? '#fff' : 'var(--text2)';
+  document.getElementById('tabAdd').style.background = isSet ? 'var(--bg3)' : 'var(--blue)';
+  document.getElementById('tabAdd').style.color = isSet ? 'var(--text2)' : '#fff';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var addInput = document.getElementById('balanceAddInput');
+  if (addInput) {
+    addInput.addEventListener('input', function() {
+      const site = tokSitesData.find(function(s) { return s.id === tokSelectedSiteId; });
+      const cur = site ? site.balance : 0;
+      const adding = parseInt(this.value, 10) || 0;
+      document.getElementById('addAmountDisplay').textContent = '+ ' + adding.toLocaleString() + ' kWh';
+      document.getElementById('addNewDisplay').textContent = (cur + adding).toLocaleString() + ' kWh';
+    });
   }
-}, 60000);
+});
+
+function applyBalanceChange(newBal, msg) {
+  const store = getTokenStore();
+  if (!store[tokSelectedSiteId]) store[tokSelectedSiteId] = { balance: 0, lastUpdated: null, history: [] };
+  store[tokSelectedSiteId].balance = newBal;
+  saveTokenStore(store);
+  const site = tokSitesData.find(function(s) { return s.id === tokSelectedSiteId; });
+  if (site) site.balance = newBal;
+  closeBalanceModal();
+  tokUpdateSummary();
+  tokRenderCards();
+  tokRenderAlerts();
+  tokShowToast(msg, 'ok');
+  selectSite(tokSelectedSiteId);
+}
+
+function saveSetBalance() {
+  const val = parseInt(document.getElementById('balanceSetInput').value, 10);
+  if (isNaN(val) || val < 0) { tokShowToast('Enter a valid balance', 'err'); return; }
+  applyBalanceChange(val, 'Balance set to ' + val.toLocaleString() + ' kWh');
+}
+
+function saveAddTokens() {
+  const site = tokSitesData.find(function(s) { return s.id === tokSelectedSiteId; });
+  const cur = site ? site.balance : 0;
+  const adding = parseInt(document.getElementById('balanceAddInput').value, 10);
+  if (isNaN(adding) || adding <= 0) { tokShowToast('Enter a positive amount to add', 'err'); return; }
+  const newBal = cur + adding;
+  applyBalanceChange(newBal, '+' + adding.toLocaleString() + ' kWh added → ' + newBal.toLocaleString() + ' kWh total');
+}
+
+function tokSetGridLoading() {
+  document.getElementById('siteGrid').innerHTML =
+    '<div class="loading-overlay" style="grid-column:1/-1"><div class="spinner"></div><span style="color:var(--text3)">Loading sites…</span></div>';
+}
+
+function tokSetGridError(msg) {
+  document.getElementById('siteGrid').innerHTML =
+    '<div class="empty" style="grid-column:1/-1"><i class="ti ti-wifi-off"></i><div style="margin-bottom:8px">Could not load sites</div><div style="font-size:12px;color:var(--text3)">' + msg + '</div></div>';
+}
+
+window.addEventListener('DOMContentLoaded', async function() {
+  const hasAuth = loadAuth();
+  if (hasAuth) {
+    document.getElementById('authModal').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    // Refresh token silently before first data load
+    await silentRefreshToken();
+    tokRefreshAll();
+  }
+});
+
 
 // CORE
 async function refreshToken(){const rt=sessionStorage.getItem('rtok'),cid=sessionStorage.getItem('cid')||localStorage.getItem('cpt_client_id');if(!rt||!cid)return false;try{const r=await fetch(PROXY+'/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid,refresh_token:rt})});if(!r.ok)return false;const d=await r.json();if(d.access_token){token=d.access_token;sessionStorage.setItem('tok',token);if(d.refresh_token)sessionStorage.setItem('rtok',d.refresh_token);localStorage.setItem('cpt_shared_tok',token);if(d.refresh_token)localStorage.setItem('cpt_shared_rtok',d.refresh_token);return true;}}catch(_){}return false;}
@@ -1321,7 +1932,7 @@ function updateAlertsBadge(){
   var tabEls=document.querySelectorAll('.nav-tab');
   if(tabEls[3]) tabEls[3].textContent=n>0?'Alerts ('+n+')':'Alerts';
 }
-function switchTab(tab){activeTab=tab;const tabs=['fleet','analytics','control','alerts','tokens'];document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));tabs.forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'':'none';});if(tab==='alerts')loadAlerts();if(tab==='control'){renderSiteSelectList();fetchWeather();}if(tab==='analytics'){populateAnalyticsSites();setDefaultDateRange();}if(tab==='tokens')renderTokenTab();}
+function switchTab(tab){activeTab=tab;const tabs=['fleet','analytics','control','alerts','tokens'];document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));tabs.forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'':'none';});if(tab==='alerts')loadAlerts();if(tab==='control'){renderSiteSelectList();fetchWeather();}if(tab==='analytics'){populateAnalyticsSites();setDefaultDateRange();}if(tab==='tokens'){tokLoadAuth();tokRefreshAll();}}
 function refreshData(){liveData={};if(activeTab==='fleet')loadFleet();else if(activeTab==='alerts')loadAlerts();else loadFleet();}
 function logout(){stopAutoRefresh();sessionStorage.clear();token=null;sites=[];liveData={};['logout-btn','refresh-btn'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('live-ind').style.display='none';document.getElementById('chat-toggle').style.display='none';showPage('auth-page');}
 let chatHistory=[];
