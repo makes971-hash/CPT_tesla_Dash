@@ -416,6 +416,15 @@ canvas{width:100%!important;height:160px!important;margin-top:8px}
           <button class="period-btn" onclick="setPeriod('lifetime',this)">Lifetime</button>
         </div>
         <button class="btn" onclick="loadSiteAnalytics()" style="margin-left:8px;padding:5px 12px;font-size:12px">&#8635; Refresh</button>
+        <button class="btn" onclick="exportAnalyticsCSV()" style="padding:5px 12px;font-size:12px;background:#1a202c;color:#fff;border-color:#1a202c">&#8595; CSV</button>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
+        <span style="font-size:12px;color:var(--muted);font-weight:500">Date range:</span>
+        <input type="date" id="an-date-from" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)" onchange="loadSiteAnalytics()"/>
+        <span style="font-size:12px;color:var(--muted)">to</span>
+        <input type="date" id="an-date-to" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)" onchange="loadSiteAnalytics()"/>
+        <button onclick="clearDateRange()" style="padding:5px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--muted);cursor:pointer">Clear</button>
+        <span id="an-date-label" style="font-size:11px;color:var(--muted)"></span>
       </div>
       <div id="an-loading" style="display:none" class="loading"><div class="spinner"></div><span>Loading analytics...</span></div>
       <div id="an-content" style="display:none">
@@ -997,11 +1006,16 @@ async function loadSiteAnalytics(){
 }
 
 async function loadSingleSiteAnalytics(sid,kind,period){
-  const h=await api('/energy_sites/'+sid+'/calendar_history?kind='+kind+'&period='+period);
+  const url=buildApiUrl(sid,kind,period);
+  const h=await api(url);
   const series=h.response?.time_series||[];
   const live=liveData[sid]||{};
   const site=sites.find(s=>String(s.energy_site_id)===String(sid));
   const name=site?site.site_name:'Site';
+  // Store for CSV export
+  lastAnalyticsSeries=series;
+  lastAnalyticsLabels=series.map(e=>getChartLabel(anPeriod,e));
+  lastAnalyticsSiteName=name;
   document.getElementById('an-scope-banner').innerHTML='&#128207; Showing <strong>'+name+'</strong> &mdash; '+getPeriodLabel(anPeriod);
   document.getElementById('an-fleet-table-wrap').style.display='none';
   document.getElementById('an-events-card').style.display='';
@@ -1198,6 +1212,101 @@ function renderCharts(labels,vals,kind){
     options:opts(unit)});
 }
 
+// ── ANALYTICS DATE RANGE ──
+function setDefaultDateRange(){
+  const now=new Date();
+  const toEl=document.getElementById('an-date-to');
+  const fromEl=document.getElementById('an-date-from');
+  if(!toEl||!fromEl) return;
+  // Only set if empty
+  if(!toEl.value){
+    toEl.value=now.toISOString().slice(0,10);
+  }
+  if(!fromEl.value){
+    const from=new Date(now);
+    from.setDate(from.getDate()-7);
+    fromEl.value=from.toISOString().slice(0,10);
+  }
+}
+
+function clearDateRange(){
+  const f=document.getElementById('an-date-from');
+  const t=document.getElementById('an-date-to');
+  if(f) f.value='';
+  if(t) t.value='';
+  document.getElementById('an-date-label').textContent='';
+  loadSiteAnalytics();
+}
+
+function getDateRangeParams(){
+  const f=document.getElementById('an-date-from');
+  const t=document.getElementById('an-date-to');
+  if(!f||!t||!f.value||!t.value) return null;
+  return {from:f.value, to:t.value};
+}
+
+function buildApiUrl(siteId,kind,period){
+  const dr=getDateRangeParams();
+  let url='/energy_sites/'+siteId+'/calendar_history?kind='+kind+'&period='+period;
+  if(dr){
+    url+='&start_date='+dr.from+'T00:00:00Z';
+    url+='&end_date='+dr.to+'T23:59:59Z';
+    const label=document.getElementById('an-date-label');
+    if(label) label.textContent=dr.from+' to '+dr.to;
+  } else {
+    const label=document.getElementById('an-date-label');
+    if(label) label.textContent='';
+  }
+  return url;
+}
+
+// ── CSV EXPORT ──
+let lastAnalyticsSeries=[];
+let lastAnalyticsLabels=[];
+let lastAnalyticsSiteName='';
+
+function exportAnalyticsCSV(){
+  if(!lastAnalyticsSeries.length){
+    alert('No data to export. Load analytics first.');
+    return;
+  }
+  const dr=getDateRangeParams();
+  const period=anPeriod;
+  const siteName=lastAnalyticsSiteName||'Fleet';
+  const dateStr=dr?dr.from+'_to_'+dr.to:period;
+  const filename='analytics_'+siteName.replace(/[^a-z0-9]/gi,'_')+'_'+dateStr+'.csv';
+
+  const rows=[['Date/Time','Solar (kWh)','Grid Import (kWh)','Grid Export (kWh)','Home Consumption (kWh)','Battery Charge (kWh)','Battery Discharge (kWh)']];
+  lastAnalyticsSeries.forEach((entry,i)=>{
+    const label=lastAnalyticsLabels[i]||'';
+    const kind=getApiParams(period).kind;
+    let sol,gi,ge,home,bc,bd;
+    if(kind==='power'){
+      const ih=lastAnalyticsSeries.length>1?(new Date(lastAnalyticsSeries[1].timestamp)-new Date(lastAnalyticsSeries[0].timestamp))/3600000:0.0833;
+      sol=((entry.solar_power||0)/1000*ih).toFixed(3);
+      gi=(Math.max(0,(entry.grid_power||0)/1000)*ih).toFixed(3);
+      ge=(Math.max(0,-(entry.grid_power||0)/1000)*ih).toFixed(3);
+      home=((entry.load_power||0)/1000*ih).toFixed(3);
+      bc=(Math.max(0,(entry.battery_power||0)/1000)*ih).toFixed(3);
+      bd=(Math.max(0,-(entry.battery_power||0)/1000)*ih).toFixed(3);
+    } else {
+      sol=((entry.solar_energy_exported||0)/1000).toFixed(3);
+      gi=((entry.grid_energy_imported||0)/1000).toFixed(3);
+      ge=((entry.grid_energy_exported_from_solar||0)/1000).toFixed(3);
+      home=(((entry.consumer_energy_imported_from_grid||0)+(entry.consumer_energy_imported_from_solar||0)+(entry.consumer_energy_imported_from_battery||0))/1000).toFixed(3);
+      bc=(((entry.battery_energy_imported_from_solar||0)+(entry.battery_energy_imported_from_grid||0))/1000).toFixed(3);
+      bd=((entry.battery_energy_exported||0)/1000).toFixed(3);
+    }
+    rows.push([entry.timestamp||label,sol,gi,ge,home,bc,bd]);
+  });
+
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=filename;
+  a.click();
+}
+
 async function fetchWeather(){try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=-33.9249&longitude=18.4241&current=temperature_2m,weather_code,cloud_cover,uv_index,precipitation&daily=uv_index_max,precipitation_sum,cloud_cover_mean&timezone=Africa%2FJohannesburg&forecast_days=1');const d=await r.json();const c=d.current,dl=d.daily;document.getElementById('w-temp').textContent=Math.round(c.temperature_2m)+'°C';document.getElementById('w-cloud').textContent=c.cloud_cover+'%';document.getElementById('w-uv').textContent=c.uv_index.toFixed(1);document.getElementById('w-rain').textContent=c.precipitation+' mm';const ic={0:'&#9728;&#65039;',1:'&#127780;&#65039;',2:'&#127780;&#65039;',3:'&#9729;&#65039;'};document.getElementById('w-icon').innerHTML=c.weather_code<=3?ic[c.weather_code]:c.weather_code<=49?'&#127787;&#65039;':c.weather_code<=67?'&#127783;&#65039;':'&#9928;&#65039;';const dc={0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast'};document.getElementById('w-desc').textContent=(c.weather_code<=3?dc[c.weather_code]:c.weather_code<=49?'Foggy':c.weather_code<=67?'Rainy':'Stormy')+' · Cape Town';const uv=dl.uv_index_max[0],cl=dl.cloud_cover_mean[0],rn=dl.precipitation_sum[0];let rec,reason,color;if(rn>5){rec=100;reason='&#127783;&#65039; Rainy — keep battery full.';color='#ef4444';}else if(cl>70){rec=80;reason='&#9729;&#65039; Overcast — high reserve recommended.';color='#f59e0b';}else if(cl>40||uv<4){rec=60;reason='&#127780;&#65039; Partly cloudy — moderate solar.';color='#f59e0b';}else if(uv<7){rec=40;reason='&#127780;&#65039; Good solar day.';color='#10b981';}else if(uv<10){rec=20;reason='&#9728;&#65039; Excellent solar.';color='#10b981';}else{rec=10;reason='&#128262; Exceptional solar — minimal reserve.';color='#10b981';}weatherRecommendation=rec;const el=document.getElementById('w-rec-level');el.textContent=rec+'%';el.style.color=color;document.getElementById('w-rec-reason').innerHTML=reason;document.getElementById('w-apply-btn').disabled=false;}catch(e){document.getElementById('w-desc').textContent='Weather unavailable';}}
 let weatherRecommendation=null;
 function applyWeatherRecommendation(){if(weatherRecommendation===null)return;setReserve(weatherRecommendation);selectAllSites(true);document.getElementById('ctrl-result').innerHTML='<div class="ctrl-result-item ctrl-ok">&#9989; Reserve set to '+weatherRecommendation+'% — click Apply to confirm. Note: Silo/Altmore/Waterfront/Marina sites will be capped at 85% minimum.</div>';}
@@ -1212,7 +1321,7 @@ function updateAlertsBadge(){
   var tabEls=document.querySelectorAll('.nav-tab');
   if(tabEls[3]) tabEls[3].textContent=n>0?'Alerts ('+n+')':'Alerts';
 }
-function switchTab(tab){activeTab=tab;const tabs=['fleet','analytics','control','alerts','tokens'];document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));tabs.forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'':'none';});if(tab==='alerts')loadAlerts();if(tab==='control'){renderSiteSelectList();fetchWeather();}if(tab==='analytics')populateAnalyticsSites();if(tab==='tokens')renderTokenTab();}
+function switchTab(tab){activeTab=tab;const tabs=['fleet','analytics','control','alerts','tokens'];document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));tabs.forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'':'none';});if(tab==='alerts')loadAlerts();if(tab==='control'){renderSiteSelectList();fetchWeather();}if(tab==='analytics'){populateAnalyticsSites();setDefaultDateRange();}if(tab==='tokens')renderTokenTab();}
 function refreshData(){liveData={};if(activeTab==='fleet')loadFleet();else if(activeTab==='alerts')loadAlerts();else loadFleet();}
 function logout(){stopAutoRefresh();sessionStorage.clear();token=null;sites=[];liveData={};['logout-btn','refresh-btn'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('live-ind').style.display='none';document.getElementById('chat-toggle').style.display='none';showPage('auth-page');}
 let chatHistory=[];
